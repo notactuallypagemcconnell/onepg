@@ -23,8 +23,7 @@ class OnePageSite
   end
 
   def post_to_html(post)
-    html = Kramdown::Document.new(File.read("posts/#{post}")).to_html
-    binding.pry
+    Kramdown::Document.new(File.read("posts/#{post}")).to_html
   end
 
   def posts
