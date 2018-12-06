@@ -1,5 +1,5 @@
 #!/bin/ruby
-
+require 'pry'
 require 'kramdown'
 
 class OnePageSite
@@ -8,11 +8,14 @@ class OnePageSite
   end
   def generate
     puts full_page
-    pbcopy full_page
+    a = `ls posts`.split("\n").map { |post| post_to_html(post) }.join("#{'</br>' * 75}\n")
+    b = full_page + "#{'</br>' * 75}" + a
+    pbcopy b
+    b
   end
 
   def full_page
-    "#{base}#{page_break}#{html_posts.join(page_break)}"
+    "#{base}"
   end
 
   def html_posts
@@ -20,7 +23,8 @@ class OnePageSite
   end
 
   def post_to_html(post)
-    Kramdown::Document.new(File.read("posts/#{post}")).to_html
+    html = Kramdown::Document.new(File.read("posts/#{post}")).to_html
+    binding.pry
   end
 
   def posts
@@ -31,20 +35,12 @@ class OnePageSite
     File.read("index.html")
   end
 
-  def page_break
-    "</br>" * 75
-  end
-
   def pbcopy(text)
     IO.popen('pbcopy', 'w') { |f| f << text }
-    puts "\n\n\n\n\n\n\n\n\n\nHTML copied to clipboard. Also see above ^"
   end
 end
 
 html = OnePageSite.new.generate
 
 puts html
-
-File.open("out.html", "w+b") do |f|
-  f.write html
-end
+File.write("out.html", html)
