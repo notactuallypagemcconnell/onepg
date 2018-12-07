@@ -10,8 +10,9 @@ class OnePageSite
     @posts_directory = posts_directory
   end
   def generate
+    # TODO this is where we really wanna start adding more nodes to the document as blog posts...
     post_html = `ls posts`.split("\n").map { |post| post_to_html(post) }.join("#{'</br>' * 75}\n")
-    html_document = base + "#{'</br>' * 75}" + post_html + "</body>\n</html>"
+    html_document = about_me + "#{'</br>' * 75}" + post_html + "</body>\n</html>"
     copy_to_clipboard(html_document)
     puts html_document
     html_document
@@ -34,7 +35,7 @@ class OnePageSite
     `ls posts`.split("\n")
   end
 
-  def base
+  def about_me
     AboutMePage.new(intro).html
   end
 
