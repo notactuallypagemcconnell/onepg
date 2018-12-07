@@ -3,15 +3,15 @@ require_relative 'bannered_introduction'
 require_relative 'html_document'
 
 class AboutMePage
-  attr_reader :html, :colors, :header_size
+  attr_reader :html, :colors, :header_size, :html_document
 
   def initialize(phrase, header_size = 2)
     # i know light blue isnt a color to the browser in this string form, I just like it there
     @colors = ["red", "light blue", "orange"]
     @header_size = header_size
-    @document = HtmlDocument.new
-    @document.add_nodes(SandwichButtons.new.button_nodes)
-    @document.add_nodes(BanneredIntroduction.new(phrase).banner_nodes)
-    @html = @document.body
+    html_document = HtmlDocument.new
+    html_document.add_nodes(SandwichButtons.new.button_nodes)
+    html_document.add_nodes(BanneredIntroduction.new(phrase).banner_nodes)
+    @html = html_document.body
   end
 end
