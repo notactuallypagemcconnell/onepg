@@ -1,4 +1,3 @@
-require 'pry'
 require 'spec_helper'
 require_relative '../lib/sandwich_buttons'
 
