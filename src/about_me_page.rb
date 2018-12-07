@@ -35,7 +35,8 @@ class AboutMePage
   end
 
   def buttons
-    "<button onclick=\"document.body.background = ''\">Sandwich Off</button><button onclick=\"document.body.background = 'sandwich.jpg'\">Sandwich On</button>\n"
+    # "<button onclick=\"document.body.background = ''\">Sandwich Off</button><button onclick=\"document.body.background = 'sandwich.jpg'\">Sandwich On</button>\n"
+    SandwichButtons.new.buttons_html
   end
 end
 
@@ -49,6 +50,15 @@ class HtmlDocument
 end
 
 class BanneredIntroduction
+end
+
+class SandwichButtons
+  attr_reader :buttons, :buttons_html
+
+  def initialize
+    @buttons = ["<button onclick=\"document.body.background = ''\">Sandwich Off</button><button onclick=\"document.body.background = 'sandwich.jpg'\">Sandwich On</button>\n"]
+    @buttons_html = @buttons.first
+  end
 end
 
 class BlogSection
