@@ -10,8 +10,8 @@ class AboutMePage
     @colors = ["red", "light blue", "orange"]
     @header_size = header_size
     @document = HtmlDocument.new
-    @document.add_nodes(SandwichButtons.new.buttons)
+    @document.add_nodes(SandwichButtons.new.button_nodes)
     @document.add_nodes(BanneredIntroduction.new(phrase).banner_nodes)
-    @html = @document.html_document
+    @html = @document.body
   end
 end
