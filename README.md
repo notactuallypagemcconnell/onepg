@@ -6,7 +6,7 @@ To make it twerk:
 
 ```ruby
 bundle
-ruby main.rb | pbcopy
+ruby src/main.rb | pbcopy
 ```
 
 Now, paste into the index.html or whatever on your cpanel site like a modern pro.

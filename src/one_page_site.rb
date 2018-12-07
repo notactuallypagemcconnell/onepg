@@ -3,8 +3,10 @@ require 'rdiscount'
 require_relative 'about_me_page'
 
 class OnePageSite
-  # I feel like this is reasonable enough for now
-  def initialize(posts_directory = "/posts")
+  attr_reader :intro
+
+  def initialize(intro, posts_directory = "/posts")
+    @intro = intro
     @posts_directory = posts_directory
   end
   def generate
@@ -33,7 +35,7 @@ class OnePageSite
   end
 
   def base
-    AboutMePage.new("Hi I'm Bobby. I'm a programmer in New York").html
+    AboutMePage.new(intro).html
   end
 
   def pbcopy(text)
