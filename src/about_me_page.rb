@@ -31,7 +31,7 @@ class AboutMePage
   end
 
   def base_doc
-    "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\"\n</head>"
+    HtmlDocument.new.html_document
   end
 
   def buttons
@@ -39,4 +39,17 @@ class AboutMePage
   end
 end
 
+class HtmlDocument
+  attr_reader :html_document, :nodes
+  def initialize
+    base_doc = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n</head>"
+    @html_document = base_doc
+    @nodes = []
+  end
+end
 
+class BanneredIntroduction
+end
+
+class BlogSection
+end
