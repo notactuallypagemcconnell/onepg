@@ -42,5 +42,3 @@ class OnePageSite
     IO.popen('pbcopy', 'w') { |f| f << text }
   end
 end
-
-

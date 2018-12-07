@@ -1,6 +1,3 @@
-require_relative 'sandwich_buttons'
-require_relative 'html_document'
-
 class BanneredIntroduction
   attr_reader :words, :banner_nodes, :colors, :banner_html
 
@@ -22,7 +19,6 @@ class BanneredIntroduction
 
   def span_for_character(char, chars, index)
     if index == chars.length - 1
-      # add a break if its the end of the word for the next one
       "<span style='color: #{colors.sample}'>#{char}</br></span>\n"
     else
       "<span style='color: #{colors.sample}'>#{char}</span>\n"
