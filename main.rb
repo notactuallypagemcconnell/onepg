@@ -11,6 +11,7 @@ class OnePageSite
     a = `ls posts`.split("\n").map { |post| post_to_html(post) }.join("#{'</br>' * 75}\n")
     b = full_page + "#{'</br>' * 75}" + a
     pbcopy b
+    binding.pry
     b
   end
 
@@ -31,7 +32,7 @@ class OnePageSite
   end
 
   def base
-    File.read("index.html")
+    AboutMePage.new("Hi I'm Bobby. I'm a programmer in New York").html
   end
 
   def pbcopy(text)
@@ -39,11 +40,13 @@ class OnePageSite
   end
 end
 
-class BasePageBuilder
+class AboutMePage
+  attr_reader :html
+
   def initialize(phrase, header_size = 2)
     words = phrase.split(" ")
     tags = words.map do |word|
-      colors = ["red", "blue", "green"]
+      colors = ["red", "light blue", "orange"] # i know light blue isnt a color to the browser in this string form, I just like it there
       chars = word.split("")
       result =
         chars.map.with_index do |char, i|
@@ -55,19 +58,19 @@ class BasePageBuilder
           end
         end.join
       a = "<h#{header_size}>#{result}</h#{header_size}>"
-      binding.pry
       a
     end
+    a = base_doc + buttons + "<div>" + tags.join + "</div>"
+    @html = a
   end
 
-  def to_colored_banner
+  def base_doc
+    "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\"\n</head>"
+  end
+
+  def buttons
+    "<button onclick=\"document.body.background = ''\">Sandwich Off</button><button onclick=\"document.body.background = 'sandwich.jpg'\">Sandwich On</button>\n"
   end
 end
-# a = BasePageBuilder.new("I'm Bobby")
-# b = BasePageBuilder.new("I'm a programmer in New York")
-# binding.pry
-html = OnePageSite.new.generate
- 
-puts html
-File.write("out.html", html)
 
+OnePageSite.new.generate
