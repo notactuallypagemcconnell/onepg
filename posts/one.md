@@ -1,956 +1,745 @@
-# GenStage Tutorial
+# Exploring Git: From git init to a KV store
 
-## Introduction
-So what is GenStage?  From the official documentation, it is a "specification and computational flow for Elixir", but what does that mean to us?  
-There is a lot to something that can be described as that vague, and here we'll take a dive in and build something on top of it to understand its goals.
-We could go into the technical and theoretical implications of this, but instead lets try a pragmatic approach to really just get it to work.
 
-First, Let's imagine we have a server that constantly emits numbers.
-It starts at the state of the number we give it, then counts up in one from there onward.
-This is what we would call our producer.
-Each time it emits a number, this is an event, and we want to handle it with a consumer.
-A consumer simply takes what a producer emits and does something to it.
-In our case, we will display the count.
-There is a lot more to GenStage at a technical and applied level, but we will build up on the specifics and definitions further in later lessons, for now we just want a running example we can build up on.
+#### This is a talk I gave at [ColumbusRB](http://columbusrb.com), the slides can be found [here](http://slides.com/bobbygrayson/deck-1/live#/)
 
-## Getting Started: A Sample GenStage Project
-We'll begin by generating a simple project that has a supervision tree:
+## This eventually evolved into [this gem](https://www.github.com/ybur-yug/gkv)
+
+## Why?
+It was a good excuse to get to know git's innards a bit better, as well as work on something
+that, while somewhat useless, is technically functional and interesting.
+
+## For Who?
+Anyone with a casual knowledge of git shouldn't get too lost and hopefully learns something.
+Ambitious beginners are more than welcome, and [tweet me](https://www.twitter.com/yburyug) if something comes up
+that you think could make it better :)
+
+## Beginning
+```bash
+mkdir git_exploration
+cd git_exploration
+git init
+```
+
+This gets us a git repo created. Let's check out what we have:
 
 ```
-$ mix new genstage_example --sup
-$ cd genstage_example
-```
-
-Let's set up some basic things for the future of our application.
-Since GenStage is generally used as a transformation pipeline, lets imagine we have a background worker of some sort.
-This worker will need to persist whatever it changes, so we should get a database set up, but we can worry about that in a later lesson.
-To start, all we need to do is add `gen_stage` to our deps in `mix.deps`.
+ls -a
+. .. .git
 
 ```
-. . .
-  defp deps do
-    [
-      {:gen_stage, "~> 0.7"},
-    ]
+
+And if we check out the `.git` subdirectory in our editor:
+
+```
+$ tree .git
+
+.git
+├── branches
+├── config
+├── description
+├── HEAD
+├── hooks
+│   ├── applypatch-msg.sample
+│   ├── commit-msg.sample
+│   ├── post-update.sample
+│   ├── pre-applypatch.sample
+│   ├── pre-commit.sample
+│   ├── prepare-commit-msg.sample
+│   ├── pre-push.sample
+│   ├── pre-rebase.sample
+│   └── update.sample
+├── info
+│   └── exclude
+├── objects
+│   ├── info
+│   └── pack
+└── refs
+    ├── heads
+        └── tags
+
+9 directories, 13 files
+```
+
+A note, you may need to install tree depending on your OS. On Ubuntu, I used
+
+`sudo apt-get install tree`
+
+I imagine it is about the same on mac with `brew`. I Have no idea on Windows as I barely know how to list
+a directory in Powershell (sorry).
+
+Okay, so this doesn't look too crazy. Let's open up some of the stuff we have on initialization in
+here.
+
+`.git/info/exclude`
+```
+# git ls-files --others --exclude-from=.git/info/exclude
+# Lines that start with '#' are comments.
+# For a project mostly in C, the following would be a good set of
+# exclude patterns (uncomment them if you want to use them):
+# *.[oa]
+# *~
+```
+
+Okay, so it appears that this opens up with the command that the system would use to govern this
+behaviour. Knowing a bit about git, one can reasonably infer that this is going to work in hijinks
+with the `.gitignore` file that one can use to ignore certain files.
+
+`.git/config`
+```
+[core]
+repositoryformatversion = 0
+filemode = true
+bare = false
+logallrefupdates = true
+```
+It would appear this is just some general configuration for a boilerplate initialized repo.
+
+`.git/description`
+```
+Unnamed repository; edit this file 'description' to name the repository.
+```
+Here it seems we can name our little project
+
+`.git/refs/HEAD`
+```
+ref: refs/heads/master
+```
+This seems to be referencing the current `HEAD`.
+
+#### HEAD
+HEAD is a reference to the last commit in the current checked out branch.
+
+## Adding A File
+
+```bash
+echo "# Git Exploration" > README.md
+git add README.md
+git commit -m 'initial commit'
+```
+
+Once we do this, we can check out a new directory structure:
+
+```
+$ tree .git
+.git
+├── branches
+├── COMMIT_EDITMSG
+├── config
+├── description
+├── HEAD
+├── hooks
+│   ├── applypatch-msg.sample
+│   ├── commit-msg.sample
+│   ├── post-update.sample
+│   ├── pre-applypatch.sample
+│   ├── pre-commit.sample
+│   ├── prepare-commit-msg.sample
+│   ├── pre-push.sample
+│   ├── pre-rebase.sample
+│   └── update.sample
+├── index
+├── info
+│   └── exclude
+├── logs
+│   ├── HEAD
+│   └── refs
+│       └── heads
+│           └── master
+├── objects
+│   ├── 1b
+│   │   └── f567a9cee63cd3036628c1519b818461905b27
+│   ├── 9d
+│   │   └── aeafb9864cf43055ae93beb0afd6c7d144bfa4
+│   ├── c1
+│   │   └── 2d7c0ed49ad9c7aa938743ba6fdee54b6b7fe1
+│   ├── info
+│   └── pack
+└── refs
+  ├── heads
+      │   └── master
+          └── tags
+
+15 directories, 21 files
+```
+
+It appears we have some simple additions with adding one file. To start, we have expanded our
+info directory to now include a `logs` directory. We also have several subdirectories inside of our
+`objects` directory now, each containing a hash. refs subdirectory `heads` now includes a
+`master` file, and we also have added `COMMIT_EDITMSG`, and index at the root level of `.git`.
+
+The three hashes in our `objects` directory represent 3 data structures git utilizes. These are
+a `blob`, a `tree`, and a `commit`. We will go into these more in-depth later.
+
+If we examine `COMMIT_EDITMSG` we see:
+
+```
+initial commit
+
+```
+
+Logging our commit message.
+
+
+
+## Making A Branch
+Let's create a new branch to further expand this interesting `.git` directory.
+
+```bash
+git checkout -b my_feature_branch
+```
+
+What this does is use the `git checkout` command and the `-b` flag to create and checkout a new branch
+named whatever follows `-b`. We have created a branch called `my_feature_branch`. The reason I have
+called it a feature branch specifically is because this is a common flow for managing an application's
+development with multiple authors. Let's see what changed:
+
+```bash
+$ tree .git
+.git
+├── branches
+├── COMMIT_EDITMSG
+├── config
+├── description
+├── HEAD
+├── hooks
+│   ├── applypatch-msg.sample
+│   ├── commit-msg.sample
+│   ├── post-update.sample
+│   ├── pre-applypatch.sample
+│   ├── pre-commit.sample
+│   ├── prepare-commit-msg.sample
+│   ├── pre-push.sample
+│   ├── pre-rebase.sample
+│   └── update.sample
+├── index
+├── info
+│   └── exclude
+├── logs
+│   ├── HEAD
+│   └── refs
+│       └── heads
+│           ├── master
+│           └── my_feature_branch
+├── objects
+│   ├── 1b
+│   │   └── f567a9cee63cd3036628c1519b818461905b27
+│   ├── 9d
+│   │   └── aeafb9864cf43055ae93beb0afd6c7d144bfa4
+│   ├── c1
+│   │   └── 2d7c0ed49ad9c7aa938743ba6fdee54b6b7fe1
+│   ├── info
+│   └── pack
+└── refs
+    ├── heads
+        │   ├── master
+            │   └── my_feature_branch
+                └── tags
+
+15 directories, 23 files
+```
+
+Now, if you look at `.git/branches/refs/heads/` we can see we have added `my_feature_branch`. If we
+look at our `HEAD` files, we will see an addition to it as well.
+
+`.git/logs/refs/HEAD`
+```
+... 1433706112 -0400	commit (initial): initial commit
+... 1433796852 -0400	checkout: moving from master to my_feature_branch
+```
+
+`.git/refs/HEAD`
+```bash
+ref: refs/heads/my_feature_branch
+```
+
+It has logged our checkout and pointed us at the new branch. Also it is worth noting we have not created
+any new objects. This is one of the finer pieces of git, it is differentials rather than copies and
+copies as one would have saving `my_documentv1`, `my_documentv2`, `my_documentvN` etc.
+
+Let's add another commit by creating a directory in here and logging its boilerplate.
+
+```
+mkdir test && echo "test" > test/file.txt
+cd test
+git status
+# => ./
+```
+
+Okay, lets add this project and commit. If you don't have Volt installed locally, feel free to substitute it
+with anything from rails to django to meteor. It doesn't really matter for our studies here.
+
+```bash
+cd ..
+git add test
+git commit -m 'add file + dir'
+```
+
+Now, let us further check out our changes in the git file tree:
+
+```
+.git
+├── branches
+├── COMMIT_EDITMSG
+├── config
+├── description
+├── HEAD
+├── hooks
+│   ├── applypatch-msg.sample
+│   ├── commit-msg.sample
+│   ├── post-update.sample
+│   ├── pre-applypatch.sample
+│   ├── pre-commit.sample
+│   ├── prepare-commit-msg.sample
+│   ├── pre-push.sample
+│   ├── pre-rebase.sample
+│   └── update.sample
+├── index
+├── info
+│   └── exclude
+├── logs
+│   ├── HEAD
+│   └── refs
+│       └── heads
+│           ├── master
+│           └── my_feature_branch
+├── objects
+│   ├── 1b
+│   │   └── f567a9cee63cd3036628c1519b818461905b27
+│   ├── 2b
+│   │   └── 297e643c551e76cfa1f93810c50811382f9117
+│   ├── 5e
+│   │   └── c1f4ac6015a50b5d8462582d7ae50d7029d012
+│   ├── 70
+│   │   └── cc10cfcc770f6b0ea11cdd9a876ee1a3184d77
+│   ├── 9d
+│   │   └── aeafb9864cf43055ae93beb0afd6c7d144bfa4
+│   ├── c1
+│   │   └── 2d7c0ed49ad9c7aa938743ba6fdee54b6b7fe1
+│   ├── info
+│   └── pack
+└── refs
+    ├── heads
+        │   ├── master
+            │   └── my_feature_branch
+                └── tags
+
+18 directories, 26 files
+```
+
+Now, if we look at `COMMIT_EDITMSG`
+
+```
+add file + dir
+```
+
+And again it is our latest message. The other major change is we have a ton of new objects.
+Just to see what happens, let's checkout master and see if anything changes:
+
+```bash
+git checkout master
+```
+
+and we get the same tree, but we can check out our HEAD item in the `.git` directory.
+
+So we have the same thing, but our `HEAD` file reads:
+
+```
+ref: refs/heads/master
+```
+
+So we can now see this is our constant anchor as we navigate changes.
+
+## Objects
+```bash
+$ find .git/objects
+.git/objects/pack
+.git/objects/info
+.git/objects/b7
+.git/objects/b7/37ff03e6f22c28bc4786f4b11925f2d864e00
+...
+.git/objects/4c
+.git/objects/4c/2be36223ca4d07cbd7ce8c28419ba1c4144334
+```
+
+Here we see a list of a butt ton of what looks like SHA-1 hashes. So what is git doing with all of
+these?
+
+Let's create a clean repository and proceed to start an empty git repo in it.
+
+`cd .. && mkdir git_testing`
+
+Initialize a repository
+
+`git init`
+
+And now, let's try creating one of these hash objects. We do this with the git command `hash-object`.
+If we simply use some bash, we can do this without even needing a file. By doing this we will pipe
+an echoed statement into the hash-object command through stdin and receive our hash in stdout.
+
+`echo 'test content' | git hash-object -w --stdin`
+
+```bash
+d670460b4b4aece5915caf5c68d12f560a9fe3e4
+```
+
+So, it took the string 'test content' and hashed it then spat it back out in SHA-1 form. Cool.
+
+We should examine this further.
+
+`echo "test" > test.txt`
+
+`git hash-object -w test.txt`
+
+`vim test.txt`
+```txt
+test
+test 2
+```
+
+If we save this change and run the command again:
+
+`git hash-object -w test.txt`
+
+`6375a2690c50e28c8c351fc552e2fd8a24b01031`
+
+And if we check out our objects directory we can now see what git has done:
+
+```bash
+bobby@bobdawg-devbox:~/code/git_test/test$ find .git/objects/ -type f
+.git/objects/9d/aeafb9864cf43055ae93beb0afd6c7d144bfa4
+.git/objects/63/75a2690c50e28c8c351fc552e2fd8a24b01031
+```
+
+It has a hash for each of our objects saved. Woo! But wait. We haven't committed anything. How is git
+tracking all this?
+
+Well it turns out git just keeps some headers with these SHA-1's, and does a bunch of cool stuff so it
+only has to track changes. Not entire new versions of each document. So each of these objects simply
+represents a given state of some blob of our data.'
+
+If we dive in to do the reverse of this, we can look up our input using git's `cat-file` command, which
+intakes a hash.
+
+`git cat-file 6375a2690c50e28c8c351fc552e2fd8a24b01031`
+
+```
+test
+test 2
+```
+
+Now, if we make another change on this, we will be able to see the new version.
+
+`vim test.txt`
+```
+test "one"
+```
+
+If we delete everything and replace it with this line, the do our typical:
+
+`git hash-object -w test.txt`
+
+We get a new hash, which when called with `cat-file` will output a the new value,
+while still keeping our old object in history.
+
+What this really is at it's core is a key:value store. Using this, we can leverage
+a very simple database that only relies on single key/value types (symbol, string)
+to store any data we need to and look it up. So, let's move on.
+
+## Aside - Git: A Directed Acyclic Graph
+In the broadest of terms, git is a [directed acyclic graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph). This sounds quite fancy and/or
+scary depending on how hard in the paint you go with mathematica, but it truly isn't that crazy. 
+Let's ignore Wikipedia's terse entry, and instead break it down on our own.
+
+## Storage
+In its most basic state, git functions to make one of these graphs connecting a series of objects. These
+objects also have a handful of types.
+
+### Types
+
+#### Blob
+A `blob` is a blob of bytes. It usually is a file, but can also be a symlink or a myriad of other things.
+It is all simply semantics as long as there is a pointer to the `blob`.
+
+#### Tree
+Directories are represented by a `tree` object. They refer to `blobs` and other `trees`. When one of these nodes
+(a `tree` or a `blob`, in this case) points to another in the graph, it *depends* on that node. It is a connection
+that cannot be broken. You can garbage collect, filesystem check, and a myriad of other functions
+but we do not need to truly know more other than that without a referent of dependence, a node
+is essentially useless, as it is disconnected.
+
+#### Commit
+A `commit` refers to a tree that represents the state of a group of `blobs`' state at the time of that given
+commit. It refers to a range `X` of other commits that are its parents. More than one parent means a merge,
+no parent means an initial commit, and a single just means its a regular old commit. As we saw earlier,
+the body of a commit is its message.
+
+#### Refs
+Refs have two functions: storing `HEAD`s, and `branches`. They are essentially notes left on a given
+node. These notes can be moved around freely and arent stored in history, and arent transferred
+between repositories. They are simply a means to namespace 'I am working here'.
+
+#### Visualizing It
+![A Typical remote/local DAG](http://eagain.net/articles/git-for-computer-scientists/git-history.6.dot.svg)
+
+As you can see, these nodes form a `tree` of functioning between master and a remote with a few merges
+thrown in (any of the nodes with 2 parents).
+
+## Git as a Key:Value Store
+
+### Note: Do not use this for real software
+
+### Addendum: Apparently [crates.io](http://crates.io) does this, and those guys are wicked smart, so maybe its a good idea but definitely not at this capacity we are building
+
+Since the `cat-file` and `hash_object` pattern functions simply as a key:value store for git, we
+can utilize this to our advantage. Normal storing large strings in-memory in Ruby can get quite
+taxing, but if we simply store the string of the SHA-1 hash to a given key, we can greatly reduce
+the memory footprint of our master dictionary and allow it to grow far larger in size (theoretically).
+So, let's code up a pseudo-class for this and fill it in after we get that far.
+
+`vim git_database.rb`
+```ruby
+module GitDatabase
+class Database
+  def initialize
+    # set initliazers and master dictionary
   end
-. . .
-```
 
-Now, we should fetch our dependencies and compile before we start setup:
-
-```
-$ mix do deps.get, compile
-```
-
-Lets build a producer, our simple beginning building block to help us utilize this new tool!
-
-## Building A Producer
-To get started what we want to do is create a producer that emits a constant stream of events for our consumer to handle.
-This is quite simple with the rudimentary example of a counter.
-Let's create a namespaced directory under `lib` and then go from there, this way our module naming matches our names of the modules themselves:
-
-```
-$ mkdir lib/genstage_example
-$ touch lib/genstage_example/producer.ex
-```
-
-Now we can add the code:
-
-```
-defmodule GenstageExample.Producer do
-  alias Experimental.GenStage
-  use GenStage
-
-  def start_link do
-    GenStage.start_link(__MODULE__, 0, name: __MODULE__)
-                                       # naming allows us to handle failure
+  def set
+    # set a given key to a value
   end
 
-  def init(counter) do
-    {:producer, counter}
+  def get
+    # get a given key's value
   end
 
-  def handle_demand(demand, state) do
-                    # the default demand is 1000
-    events = Enum.to_list(state..state + demand - 1)
-             # [0 .. 999]
-             # is a filled list, so its going to be considered emitting true events immediately
-    {:noreply, events, (state + demand)}
+  def hash_object
+    # hash a given input that is coerced to a string
   end
+
+  def cat_file
+    # cat out a given file based on SHA-1 hash
+  end
+end
 end
 ```
 
-Let's break this down line by line.
-To begin with, we have our initial declarations:
+We can now tackle this piece by piece.
 
-```
-. . .
-defmodule GenstageExample.Producer do
-  alias Experimental.GenStage
-  use GenStage
-. . .
-```
+#### Initializers
 
-What this does is a couple simple things.
-First, we declare our module, and soon after we alias `Experimental.GenStage`.
-This is simply because we will be calling it more than once and makes it more convenient.
-The `use GenStage` line is much akin to `use GenServer`.
-This line allows us to import the default behaviour and functions to save us from a large amount of boilerplate.
+`vim git_database.rb`
+```ruby
+...
+class Database
+  attr_accessor :items
 
-If we go further, we see the first two primary functions for startup:
-
-```
-. . .
-  def start_link do
-    GenStage.start_link(__MODULE__, :the_state_doesnt_matter)
+  def initialize
+    @items = {}
+    `git init`
   end
-
-  def init(counter) do
-    {:producer, counter}
-  end
-. . .
-```
-
-These two functions offer a very simple start.
-First, we have our standard `start_link/0` function.
-Inside here, we use`GenStage.start_link/` beginning with our argument `__MODULE__`, which will give it the name of our current module.
-Next, we set a state, which is arbitrary in this case, and can be any value.
-The `__MODULE__` argument is used for name registration like any other module.
-The second argument is the arguments, which in this case are meaningless as we do not care about it.
-In `init/1` we simply set the counter as our state, and label ourselves as a producer.
-
-Finally, we have where the real meat of our code's functionality is:
+...
 
 ```
-. . .
-  def handle_demand(demand, state) do
-    events = Enum.to_list(state..state + demand - 1)
-    {:noreply, events, (state + demand)}
+
+Simple enough. We ensure we have a git repository initialized, and we ensure that we setup our
+master dictionary.
+
+#### Hashing
+`vim git_database.rb`
+```ruby
+...
+  def hash_object(string)
+    # What do we do?
   end
-. . .
+...
 ```
 
-`handle_demand/2` must be implemented by all producer type modules that utilize GenStage.
-In this case, we are simply sending out an incrementing counter.
-This might not make a ton of sense until we build our consumer, so lets move on to that now.
-
-## Building A Consumer
-The consumer will handle the events that are broadcasted out by our producer.
-For now, we wont worry about things like broadcast strategies, or what the internals are truly doing.
-We'll start by showing all the code and then break it down.
+Well, to start, lets fire up irb and see what we can do calling git from Ruby.
 
 ```
-defmodule GenstageExample.Consumer do
-  alias Experimental.GenStage
-  use GenStage
+irb
+irb(main):001:0> string = "test"
+=> "test"
+irb(main):002:0> `echo #{string}`
+=> "test\n"
+irb(main):003:0> `echo #{string} | git hash-object -w --stdin`
+=> "9daeafb9864cf43055ae93beb0afd6c7d144bfa4\n"
+irb(main):004:0> `echo #{string} | git hash-object -w --stdin`.strip!
+=> "9daeafb9864cf43055ae93beb0afd6c7d144bfa4"
+```
 
-  def start_link do
-    GenStage.start_link(__MODULE__, :state_doesnt_matter)
+So, it appears we can essentially call exactly what we were prior. We can now reasonable change the
+function to be:
+
+```ruby
+...
+  def hash_object(data)
+    `echo #{data} | git hash-object -w --stdin`.strip!
   end
+...
+```
 
-  def init(state) do
-    {:consumer, state, subscribe_to: [GenstageExample.Producer]}
+And this will get that blob hashed up and stored for us. Now, notice we get the exact hash here, but if
+we do a
+
+`find .git/objects -type f`
+
+and look at a sampling of what we get:
+
+```
+.git/objects/e4/ea753518a47496350473b8eb0972ad2985d964
+```
+
+You might notice that objects has subdirectories of seemingly random 2 letter combos. There are the first 2
+characters of the hash, but git does this to save on overhead. So, if looking in the git directory for hashes
+you must account for the parent directory of the longer string to get the entire SHA-1.
+
+#### Cattin'
+Since the prior method returns us a hash directly, we can use the same command as earlier and interpolate.
+
+```ruby
+...
+  def cat_file(hash)
+    `git cat-file -p #{hash}`
   end
+...
+```
 
-  def handle_events(events, _from, state) do
-    for event <- events do
-      IO.inspect {self(), event, state}
+And now we just need a way to map keys to the hashes we have saved.
+
+#### Set
+```ruby
+...
+  def set
+    # get key, data
+    # hash data
+    # save key to SHA-1 hash in @items
+  end
+...
+```
+
+This is a reasonable fleshed out idea of a simple set implementation. So, first we need to take in a key:
+
+```ruby
+...
+  def set(key, value)
+    hash = hash_object(value.to_s)
+    @items[key] = value
+  end
+...
+```
+
+And now, we can move onto a get implementation
+
+#### Get
+To get, we have a little more to do. We will have a key, and that gets us an SHA-1 hash. However,
+we still need to decrypt it using our `cat_file` function. So, if we pseudocode this out:
+
+```ruby
+...
+  def get
+    # find hash by key
+    # cat-file hash
+  end
+...
+```
+
+So, with our functions already set up we can simply go in and do this:
+
+```ruby
+...
+  def get(key)
+    cat_file(@items[key.to_s])
+  end
+...
+
+```
+
+And now, we have a finished class that can function as a reasonable minimal database. Consider
+it an equally ghetto but more interesting version of the good 'ole CSV store.
+
+### Accessing Object History
+Currently we are only returning the latest version of a given item. However, we have already stored it at every
+state it hash ever been hashed. So, if we were to add in some functionality for grabbing versions, it would be
+quite simple.
+
+```ruby
+module GitDatabase
+  class Database
+    attr_accessor :items
+    def initialize
+      `git init`
+      @items = {}
     end
-    {:noreply, [], state}
-  end
-end
-```
 
-To start, let's look at the beginning functions just like last time:
-
-```
-defmodule GenstageExample.Consumer do
-  alias Experimental.GenStage
-  use GenStage
-
-  def start_link do
-    GenStage.start_link(__MODULE__, :state_doesnt_matter)
-  end
-
-  def init(state) do
-    {:consumer, state, subscribe_to: [GenstageExample.Producer]}
-  end
-. . .
-```
-
-To begin, much like in our producer, we set up our `start_link/0` and `init/1` functions.
-In `start_link` we simple register the module name like last time, and set a state.
-The state is arbitrary for the consumer, and can be literally whatever we please, in this case `:state_doesnt_matter`.
-
-In `init/1` we simply take the state and set up our expected tuple.
-It expected use to register our `:consumer` atom first, then the state given.
-Our `subscribe_to` clause is optional.
-What this does is subscribe us to our producer module.
-The reason for this is if something crashes, it will simply attempt to re-subscribe and then resume receiving emitted events.
-
-```
-. . .
-  def handle_events(events, _from, state) do
-    for event <- events do
-      IO.inspect {self(), event, state}
-    end
-    {:noreply, [], state}
-  end
-. . .
-```
-
-This is the meat of our consumer, `handle_events/3`.
-`handle_events/3` must be implemented by any `consumer` or `producer_consumer` type of GenStage module.
-What this does for us is quite simple.
-We take a list of events, and iterate through these.
-From there, we inspect the `pid` of our consumer, the event (in this case the current count), and the state.
-After that, we don't reply because we are a consumer and do not handle anything, and we don't emit events to the second argument is empty, then we simply pass on the state.
-
-## Wiring It Together
-To get all of this to work we only have to make one simple change.
-Open up `lib/genstage_example.ex` and we can add them as workers and they will automatically start with our application:
-
-```
-. . .
-    children = [
-      worker(GenstageExample.Producer, []),
-      worker(GenstageExample.Consumer, []),
-    ]
-. . .
-```
-
-With this, if things are all correct, we can run IEx and we should see everything working:
-
-```
-iex(1)> {#PID<0.205.0>, 0, :state_doesnt_matter}
-{#PID<0.205.0>, 1, :state_doesnt_matter}
-{#PID<0.205.0>, 2, :state_doesnt_matter}
-{#PID<0.205.0>, 3, :state_doesnt_matter}
-{#PID<0.205.0>, 4, :state_doesnt_matter}
-{#PID<0.205.0>, 5, :state_doesnt_matter}
-{#PID<0.205.0>, 6, :state_doesnt_matter}
-{#PID<0.205.0>, 7, :state_doesnt_matter}
-{#PID<0.205.0>, 8, :state_doesnt_matter}
-{#PID<0.205.0>, 9, :state_doesnt_matter}
-{#PID<0.205.0>, 10, :state_doesnt_matter}
-{#PID<0.205.0>, 11, :state_doesnt_matter}
-{#PID<0.205.0>, 12, :state_doesnt_matter}
-. . .
-```
-
-## Tinkering: For Science and Understanding
-From here, we have a working flow.
-There is a producer emitting our counter, and our consumber is displaying all of this and continuing the flow.
-Now, what if we wanted multiple consumers?
-Right now, if we examine the `IO.inspect/1` output, we see that every single event is handled by a single PID.
-This isn't very Elixir-y.
-We have massive concurrency built-in, we should probably leverage that as much as possible.
-Let's make some adjustments so that we can have multiple workers by modifying `lib/genstage_example.ex`
-
-```
-. . .
-    children = [
-      worker(GenstageExample.Producer, []),
-      worker(GenstageExample.Consumer, [], id: 1),
-      worker(GenstageExample.Consumer, [], id: 2),
-    ]
-. . .
-```
-
-Now, let's fire up IEx again:
-
-```
-$ iex -S mix
-iex(1)> {#PID<0.205.0>, 0, :state_doesnt_matter}
-{#PID<0.205.0>, 1, :state_doesnt_matter}
-{#PID<0.205.0>, 2, :state_doesnt_matter}
-{#PID<0.207.0>, 3, :state_doesnt_matter}
-. . .
-```
-
-As you can see, we have multiple PIDs now, simply by adding a line of code and giving our consumers IDs.
-But we can take this even further:
-
-```
-. . .
-    children = [
-      worker(GenstageExample.Producer, []),
-    ]
-    consumers = for id <- 1..(System.schedulers_online * 12) do
-                              # helper to get the number of cores on machine
-                  worker(GenstageExample.Consumer, [], id: id)
-                end
-
-    opts = [strategy: :one_for_one, name: GenstageExample.Supervisor]
-    Supervisor.start_link(children ++ consumers, opts)
-. . .
-```
-
-What we are doing here is quite simple.
-First, we get the number of core on the machine with `System.schedulers_online/0`, and from there we simply create a worker just like we had.
-Now we have 12 workers per core. This is much more effective.
-
-```
-. . .
-{#PID<0.229.0>, 63697, :state_doesnt_matter}
-{#PID<0.224.0>, 53190, :state_doesnt_matter}
-{#PID<0.223.0>, 72687, :state_doesnt_matter}
-{#PID<0.238.0>, 69688, :state_doesnt_matter}
-{#PID<0.196.0>, 62696, :state_doesnt_matter}
-{#PID<0.212.0>, 52713, :state_doesnt_matter}
-{#PID<0.233.0>, 72175, :state_doesnt_matter}
-{#PID<0.214.0>, 51712, :state_doesnt_matter}
-{#PID<0.227.0>, 66190, :state_doesnt_matter}
-{#PID<0.234.0>, 58694, :state_doesnt_matter}
-{#PID<0.211.0>, 55694, :state_doesnt_matter}
-{#PID<0.240.0>, 64698, :state_doesnt_matter}
-{#PID<0.193.0>, 50692, :state_doesnt_matter}
-{#PID<0.207.0>, 56683, :state_doesnt_matter}
-{#PID<0.213.0>, 71684, :state_doesnt_matter}
-{#PID<0.235.0>, 53712, :state_doesnt_matter}
-{#PID<0.208.0>, 51197, :state_doesnt_matter}
-{#PID<0.200.0>, 61689, :state_doesnt_matter}
-. . .
-```
-
-Though we lack any ordering like we would have with a single core, but every increment is being hit and processed.
-
-We can take this a step further and change our broadcasting strategy from the default in our producer:
-
-```
-. . .
-  def init(counter) do
-    {:producer, counter, dispatcher: GenStage.BroadcastDispatcher}
-  end
-. . .
-```
-
-What this does is it accumulates demand from all consumers before broadcasting its events to all of them.
-If we fire up IEx we can see the implication:
-
-```
-. . .
-{#PID<0.200.0>, 1689, :state_doesnt_matter}
-{#PID<0.230.0>, 1690, :state_doesnt_matter}
-{#PID<0.196.0>, 1679, :state_doesnt_matter}
-{#PID<0.215.0>, 1683, :state_doesnt_matter}
-{#PID<0.237.0>, 1687, :state_doesnt_matter}
-{#PID<0.205.0>, 1682, :state_doesnt_matter}
-{#PID<0.206.0>, 1695, :state_doesnt_matter}
-{#PID<0.216.0>, 1682, :state_doesnt_matter}
-{#PID<0.217.0>, 1689, :state_doesnt_matter}
-{#PID<0.233.0>, 1681, :state_doesnt_matter}
-{#PID<0.223.0>, 1689, :state_doesnt_matter}
-{#PID<0.193.0>, 1194, :state_doesnt_matter}
-. . .
-```
-
-Note that some numbers are showing twice now, this is why.
-
-
-## Setting Up Postgres to Extend Our Producer 
-To go further we'll need to bring in a database to store our progress and status.
-This is quite simple using [Ecto](LINKTOLESSON).
-To get started let's add it and the Postgresql adapter to `mix.exs`:
-
-```
-. . .
-  defp deps do
-    [
-     {:gen_stage, "~> 0.7"},
-     {:ecto, "~> 2.0"},
-     {:postgrex, "~> 0.12.1"},
-    ]
-  end
-. . .
-
-```
-
-Fetch the dependencies and compile:
-
-```
-$ mix do deps.get, compile
-```
-
-And now we can add a repo for setup in `lib/repo.ex`:
-
-```
-defmodule GenstageExample.Repo do
-  use Ecto.Repo,
-    otp_app: :genstage_example
-end
-```
-
-and with this we can set up our config next in `config/config.exs`:
-
-```
-use Mix.Config
-
-config :genstage_example, ecto_repos: [GenstageExample.Repo]
-
-config :genstage_example, GenstageExample.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  database: "genstage_example",
-  username: "your_username",
-  password: "your_password",
-  hostname: "localhost",
-  port: "5432"
-```
-
-And if we add a supservisor to `lib/genstage_example.ex` we can now start working with the DB:
-
-```
-. . .
-  def start(_type, _args) do
-    import Supervisor.Spec, warn: false
-
-    children = [
-      supervisor(GenstageExample.Repo, []),
-      worker(GenstageExample.Producer, []),
-    ]
-  end
-. . .
-```
-
-But we should also make an interface to do that, so let's import our query interface and repo to the producer:
-
-```
-. . .
-  import Ecto.Query
-  import GenstageExample.Repo
-. . .
-```
-
-Now we need to create our migration:
-
-```
-$ mix ecto.gen.migration setup_tasks status:text payload:binary
-```
-
-Now that we have a functional database, we can start storing things.
-Let's remove our change in Broadcaster, as we only were doing that to demonstrate that there are others outside the normal default in our Producer.
-
-```
-. . .
-  def init(counter) do
-    {:producer, counter}
-  end
-. . .
-```
-
-### Modelling the Rest of the Functionality
-
-Now that we have all this boilerplate work completed we should come up with a model to run all of this now that we have a simple wired-together producer/consumer model.
-At the end of the day we are trying to make a task runner.
-To do this, we probably want to abstract the interface for tasks and DB interfacing into their own modules.
-To start, let's create our `Task` module to model our actual tasks to be run:
-
-```
-defmodule GenstageExample.Task do
-  def enqueue(status, payload) do
-    GenstageExample.TaskDBInterface.insert_tasks(status, payload)
-  end
-
-  def take(limit) do
-    GenstageExample.TaskDBInterface.take_tasks(limit)
-  end
-end
-```
-
-This is a _really_ simple interface to abstract a given task's functionality.
-We only have 2 functions.
-Now, the module they are calling doesn't exist yet, it gives us the ideas we need to build a very simple interface. 
-These can be broken down as follows:
-
-1. `enqueue/2` - Enqueue a task to be run
-3. `take/1` - Take a given number of tasks to run from the database
-
-Now this gives us the interface we need: we can set things to be run, and grab tasks to be run and we can define the rest of the interface.
-Let's create an interface with our database in its own module:
-
-```
-defmodule GenstageExample.TaskDBInterface do
-  import Ecto.Query
-
-  def take_tasks(limit) do
-    {:ok, {count, events}} =
-      GenstageExample.Repo.transaction fn ->
-        ids = GenstageExample.Repo.all waiting(limit)
-        GenstageExample.Repo.update_all by_ids(ids), [set: [status: "running"]], [returning: [:id, :payload]]
+    def set(key, value)
+      unless key in @items.keys
+        @items[key] = [hash_object(value)]
+      else
+        @items[key] << value
       end
-    {count, events}
-  end
+    end
 
-  def insert_tasks(status, payload) do
-    GenstageExample.Repo.insert_all "tasks", [
-      %{status: status, payload: payload}
-    ]
-  end
+    def get(key)
+      cat_file(@items[key.to_s].first)
+    end
 
-  def update_task_status(id, status) do
-    GenstageExample.Repo.update_all by_ids([id]), set: [status: status]
-  end
+    def get_version(key, version)
+      # 0 = latest, numbers = older
+      @items[key][version]
+    end
+    
+    def versions(key)
+      @items[key].count
+    end
+    
+    private
+    
+    def hash_object(data)
+      `echo #{data.to_s} | git hash-object -w --stdin`.strip!
+    end
 
-  defp by_ids(ids) do
-    from t in "tasks", where: t.id in ^ids
-  end
-
-  defp waiting(limit) do
-    from t in "tasks",
-      where: t.status == "waiting",
-      limit: ^limit,
-      select: t.id,
-      lock: "FOR UPDATE SKIP LOCKED"
+    def cat_file(hash)
+      `git cat-file -p #{hash}`
+    end
   end
 end
 ```
 
-This one is a bit more complex, but we'll break it down piece by piece.
-We have 3 main functions, and 2 private helpers:
+Now, we can do something like:
 
-#### Main Functions
-1. `take_tasks/1`
-2. `insert_tasks/2`
-3. `update_task_status/2`
-
-With `take_tasks/1` we have the bulk of our logic.
-This function will be called to grab tasks we have queued to run them.
-Let's look at the code:
-
-```
-. . .
-  def take_tasks(limit) do
-    {:ok, {count, events}} =
-      GenstageExample.Repo.transaction fn ->
-        ids = GenstageExample.Repo.all waiting(limit)
-        GenstageExample.Repo.update_all by_ids(ids), [set: [status: "running"]], [returning: [:id, :payload]]
-      end
-    {count, events}
-  end
-. . .
+```ruby
+db = GitDatabase::Database.new
+db.set("Apples", "12")
+db.get("Apples")
+# => "12"
+db.set("Apples", "10")
+db.get_version("Apples", 0)
+# => "12"
+db.get("Apples")
+# => "10"
 ```
 
-We do a few things here.
-First, we go in and we wrap everything in a transaction.
-This maintains state in the database so we avoid race conditions and other bad things.
-Inside here, we get the ids of all tasks waiting to be executed up to some limit, and set them to `running` as their status.
-We return the `count` of total tasks and the events to be run in the consumer.
-
-Next we have `insert_tasks/2`:
-
-```
-. . .
-  def insert_tasks(status, payload) do
-    GenstageExample.Repo.insert_all "tasks", [
-      %{status: status, payload: payload}
-    ]
-  end
-. . .
-```
-
-This one is a bit more simple.
-We just insert a task to be run with a given payload binary.
-
-Finally, we have `update_task_status/2`, which is also quite simple:
-
-```
-. . .
-  def update_task_status(id, status) do
-    GenstageExample.Repo.update_all by_ids([id]), set: [status: status]
-  end
-. . .
-```
-
-Here we simple update tasks to the status we want using a given id.
-
-#### Helpers
-Our helpers are all called primarily inside of `take_tasks/1`, but also used elsewhere in the main public API.
-
-```
-. . .
-  defp by_ids(ids) do
-    from t in "tasks", where: t.id in ^ids
-  end
-
-  defp waiting(limit) do
-    from t in "tasks",
-      where: t.status == "waiting",
-      limit: ^limit,
-      select: t.id,
-      lock: "FOR UPDATE SKIP LOCKED"
-  end
-. . .
-```
-
-Neither of these has a ton of complexity.
-`by_ids/1` simply grabs all tasks that match in a given list of IDs.
-
-`waiting/1` finds all tasks that have the status waiting up to a given limit.
-However, there is one note to make on `waiting/1`.
-We leverage a lock on all tasks being updated so we skip those, a feature available in psql 9.5+.
-Outside of this, it is a very simple `SELECT` statement.
-
-Now that we have our DB interface defined as it is used in the primary API, we can move onto the producer, consumer, and last bits of configuration.
-
-### Producer, Consumer, and Final Configuration
-
-#### Final Config
-We will need to do a bit of configuration in `lib/genstage_example.ex` to clarify things as well as give us the final functionalities we will need to run jobs.
-This is what we will end up with:
-
-```
-. . .
-  def start(_type, _args) do
-    import Supervisor.Spec, warn: false
-                          # 12 workers / system core
-    consumers = for id <- (0..System.schedulers_online * 12) do
-                  worker(GenstageExample.Consumer, [], id: id)
-                end
-    producers = [
-                 worker(Producer, []),
-                ]
-
-    supervisors = [
-                    supervisor(GenstageExample.Repo, []),
-                    supervisor(Task.Supervisor, [[name: GenstageExample.TaskSupervisor]]),
-                  ]
-    children = supervisors ++ producers ++ consumers
-
-    opts = [strategy: :one_for_one, name: GenstageExample.Supervisor]
-    Supervisor.start_link(children, opts)
-  end
-
-  def start_later(module, function, args) do
-    payload = {module, function, args} |> :erlang.term_to_binary
-    Repo.insert_all("tasks", [
-                              %{status: "waiting", payload: payload}
-                             ])
-    notify_producer
-  end
-
-  def notify_producer do
-    send(Producer, :data_inserted)
-  end
-
-  defdelegate enqueue(module, function, args), to: Producer
-. . .
-```
-
-Let's tackle this from the top down.
-First, `start/2`:
-
-```
-. . .
-  def start(_type, _args) do
-    import Supervisor.Spec, warn: false
-                          # 12 workers / system core
-    consumers = for id <- (0..System.schedulers_online * 12) do
-                  worker(GenstageExample.Consumer, [], id: id)
-                end
-    producers = [
-                 worker(Producer, []),
-                ]
-
-    supervisors = [
-                    supervisor(GenstageExample.Repo, []),
-                    supervisor(Task.Supervisor, [[name: GenstageExample.TaskSupervisor]]),
-                  ]
-    children = supervisors ++ producers ++ consumers
-
-    opts = [strategy: :one_for_one, name: GenstageExample.Supervisor]
-    Supervisor.start_link(children, opts)
-  end
-. . .
-```
-First of all, you will notice we are now defining producers, consumers, and supervisors separately.
-I find this convention to work quite well to illustrate the intentions of various processes and trees we are starting here.
-In these 3 lists we set up 12 consumers / CPU core, set up a single producer, and then our supervisors for the Repo, as well as one new one.
-
-This new supervisor is run through `Task.Supervisor`, which is built into Elixir.
-We give it a name so it is easily referred to in our GenStage code, `GenstageExample.TaskSupervisor`.
-Now, we define our children as the concatenation of all these lists.
-
-Next, we have `start_later/3`:
-
-```
-. . .
-  def start_later(module, function, args) do
-    payload = {module, function, args} |> :erlang.term_to_binary
-    Repo.insert_all("tasks", [
-                              %{status: "waiting", payload: payload}
-                             ])
-    notify_producer
-  end
-. . .
-```
-This function takes a module, a function, and an argument.
-It then encodes them as a binary using some built-in erlang magic.
-From here, we then insert the task as `waiting`, and we notify a producer that a task has been inserted to run.
-
-Now let's check out `notify_producer/0`:
-
-```
-. . .
-  def notify_producer do
-    send(Producer, :data_inserted)
-  end
-. . .
-```
-
-This method is quite simple.
-We send our producer a message, `:data_inserted`, simply so that it knows what we did.
-The message here is arbitrary, but I chose this atom to make the meaning clear.
-
-Last, but not least we do some simple delegation:
-
-```
-. . .
-  defdelegate enqueue(module, functions, args), to : Producer
-. . .
-```
-This simply makes it so if we call `GenstageExample.enqueue(module, function, args)` that it will be delegated to the same method in our producer.
-
-### Producer Setup
-Our producer doesn't need a ton of work.
-first, we'll alter our `handle_demand/2` to actually do something with our events:
-
-```
-. . .
-  def handle_demand(demand, state) when demand > 0 do
-    serve_jobs(demand + state)
-  end
-. . .
-```
-
-We haven't defined `serve_jobs/2` yet, but we'll get there.
-The concept is simple, when we get a demand and demand is > 0, we do some work to the tune of demand + the current state's number of jobs.
-
-Now that we will be sending a message to the producer when we run `start_later/3`, we will want to respond to it with a `handle_info/2` call:
-
-```
-. . .
-  def handle_info(:enqueued, state) do
-    {count, events} = GenstageExample.Task.take(state)
-    {:noreply, events, state - count}
-  end
-. . .
-```
-
-With this, we simply respond by taking the number of tasks we are told to get ready to run.
-
-Now let's define `serve_jobs/1`:
-
-```
-. . .
-  def serve_jobs limit do
-    {count, events} = GenstageExample.Task.take(limit)
-    Process.send_after(@name, :enqueued, 60_000)
-    {:noreply, events, limit - count}
-  end
-. . .
-```
-
-Now, we are sending a process in one minute that to our producer telling it that it should respond to `:enqueued`.
-Note that we call the process module with `@name`, which we will need to add at the top as a module attribute:
-
-```
-. . .
-  @name __MODULE__
-. . .
-```
-
-Let's define that last function to handle the `:enqueued` message now, too:
-
-```
-. . .
-  def handle_cast(:enqueued, state) do
-    serve_jobs(state)
-  end
-. . .
-```
-
-This will simply serve jobs when we tell the producer they have `state` number of enqueued and to respond.
-
-## Setting Up the Consumer for Real Work
-Our consumer is where we do the work.
-Now that we have our producer storing tasks, we want to have the consumer handle this as well.
-There is a good bit of work to be done here tying into our work so far.
-The core of the consumer is `handle_events/3`, lets flesh out the functionality we wish to have there and define it as we go further:
-
-
-```
-. . .
-  def handle_events(events, _from, state) do
-    for event <- events do
-      %{id: id, payload: payload} = event
-      {module, function, args} = payload |> deconstruct_payload
-      task = start_task(module, function, args)
-      yield_to_and_update_task(task, id)
-    end
-    {:noreply, [], state}
-  end
-. . .
-```
-
-At its core, this setup simple just wants to run a task we decode the binary of.
-To do this we get the data from the event, deconstruct it, and then start and yield to a task.
-These functions aren't defined yet, so let's create them:
-
-
-```
-. . .
-  def deconstruct_payload payload do
-    payload |> :erlang.binary_to_term
-  end
-. . .
-```
-We can use Erlang's built-in inverse of our other `term_to_binary/1` function to get our module, function, and args back out.
-Now we need to start the task:
-
-```
-. . .
-  def start_task(mod, func, args) do
-    Task.Supervisor.async_nolink(TaskSupervisor, mod, func, args)
-  end
-. . .
-```
-
-Here we leverage the supervisor we created at the beginning to run this in a task.
-Now we need to define `yield_to_and_update_task/2`:
-
-```
-. . .
-  def yield_to_and_update_task(task, id) do
-    task
-    |> Task.yield(1000)
-    |> yield_to_status(task)
-    |> update(id)
-  end
-. . .
-```
-
-Now this brings in more pieces we've yet to define, but the core is simple.
-We wait 1 second for the task to run.
-From here, we respond to the status it returns (which will either be `:ok`, `:exit`, or `nil`) and handle it as such.
-After that we update our task via our DB interface to get things current.
-Let's define `yield_to_status/2` for each of the scenarios we mentioned:
-
-```
-. . .
-  def yield_to_status({:ok, _}, _) do
-    "success"
-  end
-
-  def yield_to_status({:exit, _}, _) do
-    "error"
-  end
-
-  def yield_to_status(nil, task) do
-    Task.shutdown(task)
-    "timeout"
-  end
-. . .
-```
-These simple handle the atom being returned from the process and respond appropriately.
-If it takes more than a second, we need to shut it down because otherwise it would just hang forever.
-
-If we make another method to update the database after consumption, we are set to go:
-
-```
-. . .
-  defp update(status, id) do
-    GenstageExample.TaskDBInterface.update_task_status(id, status)
-  end
-. . .
-```
-
-And here we just call it through our database interface and update the status after yielding to allow the task time to run.
-
-From this, we can see our finalized consumer:
-
-```
-defmodule GenstageExample.Consumer do
-  alias Experimental.GenStage
-  use GenStage
-  alias GenstageExample.{Producer, TaskSupervisor}
-
-  def start_link do
-    GenStage.start_link(__MODULE__, :state_doesnt_matter)
-  end
-
-  def init(state) do
-    {:consumer, state, subscribe_to: [Producer]}
-  end
-
-  def handle_events(events, _from, state) do
-    for event <- events do
-      %{id: id, payload: payload} = event
-      {module, function, args} = payload |> deconstruct_payload
-      task = start_task(module, function, args)
-      yield_to_and_update_task(task, id)
-    end
-    {:noreply, [], state}
-  end
-
-  defp yield_to_and_update_task(task, id) do
-    task
-    |> Task.yield(1000)
-    |> yield_to_status(task)
-    |> update(id)
-  end
-
-  defp start_task(mod, func, args) do
-    Task.Supervisor.async_nolink(TaskSupervisor, mod  , func, args)
-  end
-
-  defp yield_to_status({:ok, _}, _) do
-    "success"
-  end
-
-  defp yield_to_status({:exit, _}, _) do
-    "error"
-  end
-
-  defp yield_to_status(nil, task) do
-    Task.shutdown(task)
-    "timeout"
-  end
-
-  defp update(status, id) do
-    GenstageExample.TaskDBInterface.update_task_status(id, status)
-  end
-
-  defp deconstruct_payload payload do
-    payload |> :erlang.binary_to_term
-  end
+Abd to use this. We can make a very simple sinatra API to take input remotely:
+
+```ruby
+... # below the class
+require 'sinatra'
+require 'json'
+DB = GitDatabase::Database.new
+post '/set' do
+DB.set(params['key'], params['value']
+rescue
+  { error: 'please send key and value parameters' }.to_json
+end
+end
+
+get '/get/:key' do
+{ result: DB.get(params['key'] }.to_json
 end
 ```
 
-Now, if we go into IEx:
+This is a very simple wrapper, but if gives the general idea of where you could take this with a toy application.
 
-```
-$ iex -S mix
-iex> GenstageExample.enqueue(IO, :puts, ["wuddup"])
-#=> 
-16:39:31.014 [debug] QUERY OK db=137.4ms
-INSERT INTO "tasks" ("payload","status") VALUES ($1,$2) [<<131, 104, 3, 100, 0, 9, 69, 108, 105, 120, 105, 114, 46, 73, 79, 100, 0, 4, 112, 117, 116, 115, 108, 0, 0, 0, 1, 109, 0, 0, 0, 6, 119, 117, 100, 100, 117, 112, 106>>, "waiting"]
-:ok
-
-16:39:31.015 [debug] QUERY OK db=0.4ms queue=0.1ms
-begin []
-
-16:39:31.025 [debug] QUERY OK source="tasks" db=9.6ms
-SELECT t0."id" FROM "tasks" AS t0 WHERE (t0."status" = 'waiting') LIMIT $1 FOR UPDATE SKIP LOCKED [49000]
-
-16:39:31.026 [debug] QUERY OK source="tasks" db=0.8ms
-UPDATE "tasks" AS t0 SET "status" = $1 WHERE (t0."id" = ANY($2)) RETURNING t0."id", t0."payload" ["running", [5]]
-
-16:39:31.040 [debug] QUERY OK db=13.5ms
-commit []
-iex(2)> wuddup
-
-16:39:31.060 [debug] QUERY OK source="tasks" db=1.3ms
-UPDATE "tasks" AS t0 SET "status" = $1 WHERE (t0."id" = ANY($2)) ["success", [5]]
-```
-
-It works and we are storing and running tasks!
+## Happy Hacking, and check out [Gkv](http://github.com/ybur-yug/gkv) to actually use this in a small app
