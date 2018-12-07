@@ -1,4 +1,3 @@
-require 'redcarpet'
 require 'rdiscount'
 
 require_relative 'about_me_page'
@@ -26,9 +25,6 @@ class OnePageSite
 
   def post_to_html(post)
     markdown = File.read("posts/#{post}")
-    # binding.pry
-    # Kramdown::Document.new(File.read("posts/#{post}")).to_html
-    # Redcarpet::Markdown.new(Redcarpet::Render::HTML.new).render(File.read("posts/#{post}"))
     RDiscount.new(markdown).to_html
   end
 
