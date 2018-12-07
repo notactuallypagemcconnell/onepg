@@ -3,20 +3,20 @@ require 'pry'
 require 'kramdown'
 
 class OnePageSite
+  # I feel like this is reasonable enough for now
   def initialize(posts_directory = "/posts")
     @posts_directory = posts_directory
   end
   def generate
-    puts full_page
-    a = `ls posts`.split("\n").map { |post| post_to_html(post) }.join("#{'</br>' * 75}\n")
-    b = full_page + "#{'</br>' * 75}" + a
-    pbcopy b
-    binding.pry
-    b
+    post_html = `ls posts`.split("\n").map { |post| post_to_html(post) }.join("#{'</br>' * 75}\n")
+    html_document = base + "#{'</br>' * 75}" + post_html + "</body>\n</html>"
+    copy_to_clipboard(html_document)
+    puts html_document
+    html_document
   end
 
-  def full_page
-    "#{base}"
+  def copy_to_clipboard(document)
+    pbcopy document
   end
 
   def html_posts
@@ -41,6 +41,7 @@ class OnePageSite
 end
 
 class AboutMePage
+  # this however, not so much.
   attr_reader :html
 
   def initialize(phrase, header_size = 2)
