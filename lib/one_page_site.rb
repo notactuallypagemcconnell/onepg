@@ -2,6 +2,7 @@ require 'rdiscount'
 
 require_relative 'blog_post'
 require_relative 'about_me_page'
+require_relative 'toy_thing'
 
 class OnePageSite
   attr_reader :intro
@@ -15,6 +16,7 @@ class OnePageSite
   def generate
     document = HtmlDocument.new
     document.add_nodes(about_me.about_me_nodes)
+    document.add_nodes(ToyThing.new.toy_nodes)
     blog_posts = `ls posts`
                    .split("\n")
                    .map { |post| BlogPost.new(post) }

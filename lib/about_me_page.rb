@@ -1,6 +1,7 @@
 require_relative 'sandwich_buttons'
 require_relative 'bannered_introduction'
 require_relative 'html_document'
+require_relative 'toy_thing'
 
 class AboutMePage
   attr_accessor :html, :colors, :header_size, :html_document, :about_me_nodes
@@ -11,6 +12,7 @@ class AboutMePage
     @header_size = header_size
     html_document = HtmlDocument.new
     @about_me_nodes = [SandwichButtons.new.button_nodes + BanneredIntroduction.new(phrase).banner_nodes]
+    html_document.add_nodes(ToyThing.new.toy_nodes)
     html_document.add_nodes(SandwichButtons.new.button_nodes)
     html_document.add_nodes(BanneredIntroduction.new(phrase).banner_nodes)
     @html = html_document.body
