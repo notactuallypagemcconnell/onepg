@@ -21,4 +21,8 @@ class HtmlDocument
   def html_close
     "</html>"
   end
+
+  def bezier
+    File.read("bezier.html")
+  end
 end

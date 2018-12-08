@@ -15,13 +15,12 @@ class OnePageSite
   def generate
     document = HtmlDocument.new
     document.add_nodes(about_me.about_me_nodes)
-     #require 'pry'; binding.pry
     blog_posts = `ls posts`
                    .split("\n")
                    .map { |post| BlogPost.new(post) }
                    .map do |post| 
-      document.add_nodes(post.blog_nodes) 
-  end
+                     document.add_nodes(post.html_nodes)
+                   end
     @html_document = document
     copy_to_clipboard(document.body)
   end
