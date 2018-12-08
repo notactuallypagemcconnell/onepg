@@ -11,6 +11,16 @@ class OnePageSite
     @intro = intro
     @posts_directory = posts_directory
   end
+
+  def generate_new
+    document = HtmlDocument.new(intro)
+    document.add_nodes(about_me.about_me_nodes)
+    blog_posts = `ls posts`
+                   .map { |post| BlogPost.new(post) }
+                   .map { |post| document.add_nodes(post.blog_nodes) }
+    base_document.body
+  end
+
   def generate
     # TODO this is where we really wanna start adding more nodes to the document as blog posts...
     post_html = `ls posts`.split("\n").map { |post| post_to_html(post) }.join("#{'</br>' * 75}\n")
@@ -24,7 +34,7 @@ class OnePageSite
   end
 
   def post_to_html(post)
-    BlogPost.new(post).html
+    BlogPost.new(post)
   end
 
   def posts
