@@ -15,7 +15,8 @@ class App
 
     case request.path
     when '/'
-      [200, headers, [File.read("index.html")]]
+      # we assemble the page fresh every time a request comes just for shits and giggles
+      [200, headers, [`ruby ../lib/main.rb`]]
     when '/bezier'
       [200, headers, [File.read("bezier.html")]]
     else
