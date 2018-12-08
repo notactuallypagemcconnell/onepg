@@ -1,9 +1,11 @@
 require 'rdiscount'
 
+require_relative 'blog_post'
 require_relative 'about_me_page'
 
 class OnePageSite
   attr_reader :intro
+  attr_accessor :html_document
 
   def initialize(intro, posts_directory = "/posts")
     @intro = intro
@@ -12,9 +14,8 @@ class OnePageSite
   def generate
     # TODO this is where we really wanna start adding more nodes to the document as blog posts...
     post_html = `ls posts`.split("\n").map { |post| post_to_html(post) }.join("#{'</br>' * 75}\n")
-    html_document = about_me + "#{'</br>' * 75}" + post_html + "</body>\n</html>"
+    html_document = about_me.html + "#{'</br>' * 75}" + post_html + "</body>\n</html>"
     copy_to_clipboard(html_document)
-    puts html_document
     html_document
   end
 
@@ -22,13 +23,8 @@ class OnePageSite
     pbcopy document
   end
 
-  def html_posts
-    posts.map { |post| post_to_html(post) }
-  end
-
   def post_to_html(post)
-    markdown = File.read("posts/#{post}")
-    RDiscount.new(markdown).to_html
+    BlogPost.new(post).html
   end
 
   def posts
@@ -36,7 +32,7 @@ class OnePageSite
   end
 
   def about_me
-    AboutMePage.new(intro).html
+    AboutMePage.new(intro)
   end
 
   def pbcopy(text)

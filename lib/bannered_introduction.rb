@@ -1,5 +1,5 @@
 class BanneredIntroduction
-  attr_reader :words, :banner_nodes, :colors, :banner_html
+  attr_reader :words, :banner_nodes, :colors
 
   def initialize(words)
     @words = words.split(" ")
@@ -13,8 +13,8 @@ class BanneredIntroduction
       spans         = chars.map.with_index { |char, i| span_for_character(char, chars, i) }.join
       headered_span = "<h#{header_size}>#{spans}</h#{header_size}>"
     end
+
     @banner_nodes = nodes
-    @banner_html = nodes.join
   end
 
   def span_for_character(char, chars, index)

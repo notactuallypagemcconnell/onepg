@@ -3,7 +3,7 @@ require_relative 'bannered_introduction'
 require_relative 'html_document'
 
 class AboutMePage
-  attr_reader :html, :colors, :header_size, :html_document
+  attr_accessor :html, :colors, :header_size, :html_document
 
   def initialize(phrase, header_size = 2)
     # i know light blue isnt a color to the browser in this string form, I just like it there
