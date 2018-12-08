@@ -25,6 +25,7 @@ class OnePageSite
                    end
     @html_document = document
     copy_to_clipboard(document.body)
+    puts @html_document.body
   end
 
   def copy_to_clipboard(document)
