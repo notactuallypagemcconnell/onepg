@@ -1,8 +1,8 @@
 class BanneredIntroduction
   attr_reader :words, :banner_nodes, :colors
 
-  def initialize(words)
-    @words = words.split(" ")
+  def initialize(words, splitter = "\n")
+    @words = words.split(splitter)
     @colors = ["red", "light blue", "orange"]
     create_headered_span_words
   end
@@ -19,7 +19,7 @@ class BanneredIntroduction
 
   def span_for_character(char, chars, index)
     if index == chars.length - 1
-      "<span style='color: #{colors.sample}'>#{char}</br></span>\n"
+      "<span style='color: #{colors.sample}'>#{char}</br>;</span>\n"
     else
       "<span style='color: #{colors.sample}'>#{char}</span>\n"
     end

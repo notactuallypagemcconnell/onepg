@@ -19,6 +19,8 @@ class App
       [200, headers, [`ruby ../lib/main.rb`]]
     when '/bezier'
       [200, headers, [File.read("bezier.html")]]
+    when '/bartlebee'
+      [200, headers, [`ruby text_poster.rb`]]
     else
       [404, headers, ["Uh oh, path not found!"]]
     end
