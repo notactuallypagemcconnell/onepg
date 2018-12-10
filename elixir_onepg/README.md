@@ -1,21 +1,8 @@
 # OnepgEx
 
-**TODO: Add description**
+Make a single page index.html style site from some basic info: a greeting and some blog posts.
 
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `onepg_ex` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:onepg_ex, "~> 0.1.0"}
-  ]
-end
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/onepg_ex](https://hexdocs.pm/onepg_ex).
-
+iex -S mix
+IO.puts OnepgEx.OnePageSite.create("Hi I'm bobby, a developer in New York", 2).body # 2nd arg is header size of the banner it makes
+# now copy it to the clipboard and paste it into whatever.
