@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+</head>
+<button onclick="document.body.background = ''">Sandwich Off</button>
+<button onclick="document.body.background = 'sandwich.jpg'">Sandwich On</button>
+
+<h2><span style='color: orange'></span>
+<span style='color: light blue'>H</span>
+<span style='color: orange'>i</span>
+<span style='color: red'></br></span>
+</h2>
+<h2><span style='color: red'></span>
+<span style='color: light blue'>I</span>
+<span style='color: light blue'>'</span>
+<span style='color: orange'>m</span>
+<span style='color: orange'></br></span>
+</h2>
+<h2><span style='color: orange'></span>
+<span style='color: orange'>b</span>
+<span style='color: red'>o</span>
+<span style='color: orange'>b</span>
+<span style='color: orange'>b</span>
+<span style='color: red'>y</span>
+<span style='color: light blue'></br></span>
+</h2>
+<h2><span style='color: red'></span>
+<span style='color: light blue'>I</span>
+<span style='color: orange'>'</span>
+<span style='color: light blue'>m</span>
+<span style='color: light blue'></br></span>
+</h2>
+<h2><span style='color: light blue'></span>
+<span style='color: light blue'>a</span>
+<span style='color: orange'></br></span>
+</h2>
+<h2><span style='color: light blue'></span>
+<span style='color: red'>s</span>
+<span style='color: light blue'>o</span>
+<span style='color: light blue'>f</span>
+<span style='color: orange'>t</span>
+<span style='color: light blue'>w</span>
+<span style='color: red'>a</span>
+<span style='color: light blue'>r</span>
+<span style='color: red'>e</span>
+<span style='color: orange'></br></span>
+</h2>
+<h2><span style='color: light blue'></span>
+<span style='color: light blue'>d</span>
+<span style='color: red'>e</span>
+<span style='color: orange'>v</span>
+<span style='color: orange'>e</span>
+<span style='color: light blue'>l</span>
+<span style='color: light blue'>o</span>
+<span style='color: red'>p</span>
+<span style='color: orange'>e</span>
+<span style='color: red'>r</span>
+<span style='color: orange'></br></span>
+</h2>
+<h2><span style='color: red'></span>
+<span style='color: light blue'>i</span>
+<span style='color: red'>n</span>
+<span style='color: orange'></br></span>
+</h2>
+<h2><span style='color: red'></span>
+<span style='color: red'>N</span>
+<span style='color: light blue'>e</span>
+<span style='color: light blue'>w</span>
+<span style='color: red'></br></span>
+</h2>
+<h2><span style='color: red'></span>
+<span style='color: light blue'>Y</span>
+<span style='color: light blue'>o</span>
+<span style='color: red'>r</span>
+<span style='color: orange'>k</span>
+<span style='color: orange'></br></span>
+</h2>
+<h1>Exploring Git: From git init to a KV store</h1>
+<h4>This is a talk I gave at <a href="http://columbusrb.com">ColumbusRB</a>, the slides can be found <a href="http://slides.com/bobbygrayson/deck-1/live#/">here</a></h4>
+<h2>This eventually evolved into <a href="https://www.github.com/ybur-yug/gkv">this gem</a></h2>
+<h2>Why?</h2>
+<p>It was a good excuse to get to know git’s innards a bit better, as well as work on something
+that, while somewhat useless, is technically functional and interesting.</p>
+<h2>For Who?</h2>
+<p>Anyone with a casual knowledge of git shouldn’t get too lost and hopefully learns something.
+Ambitious beginners are more than welcome, and <a href="https://www.twitter.com/yburyug">tweet me</a> if something comes up
+that you think could make it better :)</p>
+<h2>Beginning</h2>
+<pre><code class="bash">mkdir git_exploration
+cd git_exploration
+git init</code></pre>
+<p>This gets us a git repo created. Let’s check out what we have:</p>
+<pre><code class="">ls -a
+. .. .git
+</code></pre>
+<p>And if we check out the <code class="inline">.git</code> subdirectory in our editor:</p>
+<pre><code class="">$ tree .git
+
+.git
+├── branches
+├── config
+├── description
+├── HEAD
+├── hooks
+│   ├── applypatch-msg.sample
+│   ├── commit-msg.sample
+│   ├── post-update.sample
+│   ├── pre-applypatch.sample
+│   ├── pre-commit.sample
+│   ├── prepare-commit-msg.sample
+│   ├── pre-push.sample
+│   ├── pre-rebase.sample
+│   └── update.sample
+├── info
+│   └── exclude
+├── objects
+│   ├── info
+│   └── pack
+└── refs
+    ├── heads
+        └── tags
+
+9 directories, 13 files</code></pre>
+<p>A note, you may need to install tree depending on your OS. On Ubuntu, I used</p>
+<p><code class="inline">sudo apt-get install tree</code></p>
+<p>I imagine it is about the same on mac with <code class="inline">brew</code>. I Have no idea on Windows as I barely know how to list
+a directory in Powershell (sorry).</p>
+<p>Okay, so this doesn’t look too crazy. Let’s open up some of the stuff we have on initialization in
+here.</p>
+<p><code class="inline">.git/info/exclude</code></p>
+<pre><code class=""># git ls-files --others --exclude-from=.git/info/exclude
+# Lines that start with &#39;#&#39; are comments.
+# For a project mostly in C, the following would be a good set of
+# exclude patterns (uncomment them if you want to use them):
+# *.[oa]
+# *~</code></pre>
+<p>Okay, so it appears that this opens up with the command that the system would use to govern this
+behaviour. Knowing a bit about git, one can reasonably infer that this is going to work in hijinks
+with the <code class="inline">.gitignore</code> file that one can use to ignore certain files.</p>
+<p><code class="inline">.git/config</code></p>
+<pre><code class="">[core]
+repositoryformatversion = 0
+filemode = true
+bare = false
+logallrefupdates = true</code></pre>
+<p>It would appear this is just some general configuration for a boilerplate initialized repo.</p>
+<p><code class="inline">.git/description</code></p>
+<pre><code class="">Unnamed repository; edit this file &#39;description&#39; to name the repository.</code></pre>
+<p>Here it seems we can name our little project</p>
+<p><code class="inline">.git/refs/HEAD</code></p>
+<pre><code class="">ref: refs/heads/master</code></pre>
+<p>This seems to be referencing the current <code class="inline">HEAD</code>.</p>
+<h4>HEAD</h4>
+<p>HEAD is a reference to the last commit in the current checked out branch.</p>
+<h2>Adding A File</h2>
+<pre><code class="bash">echo &quot;# Git Exploration&quot; &gt; README.md
+git add README.md
+git commit -m &#39;initial commit&#39;</code></pre>
+<p>Once we do this, we can check out a new directory structure:</p>
+<pre><code class="">$ tree .git
+.git
+├── branches
+├── COMMIT_EDITMSG
+├── config
+├── description
+├── HEAD
+├── hooks
+│   ├── applypatch-msg.sample
+│   ├── commit-msg.sample
+│   ├── post-update.sample
+│   ├── pre-applypatch.sample
+│   ├── pre-commit.sample
+│   ├── prepare-commit-msg.sample
+│   ├── pre-push.sample
+│   ├── pre-rebase.sample
+│   └── update.sample
+├── index
+├── info
+│   └── exclude
+├── logs
+│   ├── HEAD
+│   └── refs
+│       └── heads
+│           └── master
+├── objects
+│   ├── 1b
+│   │   └── f567a9cee63cd3036628c1519b818461905b27
+│   ├── 9d
+│   │   └── aeafb9864cf43055ae93beb0afd6c7d144bfa4
+│   ├── c1
+│   │   └── 2d7c0ed49ad9c7aa938743ba6fdee54b6b7fe1
+│   ├── info
+│   └── pack
+└── refs
+  ├── heads
+      │   └── master
+          └── tags
+
+15 directories, 21 files</code></pre>
+<p>It appears we have some simple additions with adding one file. To start, we have expanded our
+info directory to now include a <code class="inline">logs</code> directory. We also have several subdirectories inside of our
+<code class="inline">objects</code> directory now, each containing a hash. refs subdirectory <code class="inline">heads</code> now includes a
+<code class="inline">master</code> file, and we also have added <code class="inline">COMMIT_EDITMSG</code>, and index at the root level of <code class="inline">.git</code>.</p>
+<p>The three hashes in our <code class="inline">objects</code> directory represent 3 data structures git utilizes. These are
+a <code class="inline">blob</code>, a <code class="inline">tree</code>, and a <code class="inline">commit</code>. We will go into these more in-depth later.</p>
+<p>If we examine <code class="inline">COMMIT_EDITMSG</code> we see:</p>
+<pre><code class="">initial commit
+</code></pre>
+<p>Logging our commit message.</p>
+<h2>Making A Branch</h2>
+<p>Let’s create a new branch to further expand this interesting <code class="inline">.git</code> directory.</p>
+<pre><code class="bash">git checkout -b my_feature_branch</code></pre>
+<p>What this does is use the <code class="inline">git checkout</code> command and the <code class="inline">-b</code> flag to create and checkout a new branch
+named whatever follows <code class="inline">-b</code>. We have created a branch called <code class="inline">my_feature_branch</code>. The reason I have
+called it a feature branch specifically is because this is a common flow for managing an application’s
+development with multiple authors. Let’s see what changed:</p>
+<pre><code class="bash">$ tree .git
+.git
+├── branches
+├── COMMIT_EDITMSG
+├── config
+├── description
+├── HEAD
+├── hooks
+│   ├── applypatch-msg.sample
+│   ├── commit-msg.sample
+│   ├── post-update.sample
+│   ├── pre-applypatch.sample
+│   ├── pre-commit.sample
+│   ├── prepare-commit-msg.sample
+│   ├── pre-push.sample
+│   ├── pre-rebase.sample
+│   └── update.sample
+├── index
+├── info
+│   └── exclude
+├── logs
+│   ├── HEAD
+│   └── refs
+│       └── heads
+│           ├── master
+│           └── my_feature_branch
+├── objects
+│   ├── 1b
+│   │   └── f567a9cee63cd3036628c1519b818461905b27
+│   ├── 9d
+│   │   └── aeafb9864cf43055ae93beb0afd6c7d144bfa4
+│   ├── c1
+│   │   └── 2d7c0ed49ad9c7aa938743ba6fdee54b6b7fe1
+│   ├── info
+│   └── pack
+└── refs
+    ├── heads
+        │   ├── master
+            │   └── my_feature_branch
+                └── tags
+
+15 directories, 23 files</code></pre>
+<p>Now, if you look at <code class="inline">.git/branches/refs/heads/</code> we can see we have added <code class="inline">my_feature_branch</code>. If we
+look at our <code class="inline">HEAD</code> files, we will see an addition to it as well.</p>
+<p><code class="inline">.git/logs/refs/HEAD</code></p>
+<pre><code class="">... 1433706112 -0400    commit (initial): initial commit
+... 1433796852 -0400    checkout: moving from master to my_feature_branch</code></pre>
+<p><code class="inline">.git/refs/HEAD</code></p>
+<pre><code class="bash">ref: refs/heads/my_feature_branch</code></pre>
+<p>It has logged our checkout and pointed us at the new branch. Also it is worth noting we have not created
+any new objects. This is one of the finer pieces of git, it is differentials rather than copies and
+copies as one would have saving <code class="inline">my_documentv1</code>, <code class="inline">my_documentv2</code>, <code class="inline">my_documentvN</code> etc.</p>
+<p>Let’s add another commit by creating a directory in here and logging its boilerplate.</p>
+<pre><code class="">mkdir test &amp;&amp; echo &quot;test&quot; &gt; test/file.txt
+cd test
+git status
+# =&gt; ./</code></pre>
+<p>Okay, lets add this project and commit. If you don’t have Volt installed locally, feel free to substitute it
+with anything from rails to django to meteor. It doesn’t really matter for our studies here.</p>
+<pre><code class="bash">cd ..
+git add test
+git commit -m &#39;add file + dir&#39;</code></pre>
+<p>Now, let us further check out our changes in the git file tree:</p>
+<pre><code class="">.git
+├── branches
+├── COMMIT_EDITMSG
+├── config
+├── description
+├── HEAD
+├── hooks
+│   ├── applypatch-msg.sample
+│   ├── commit-msg.sample
+│   ├── post-update.sample
+│   ├── pre-applypatch.sample
+│   ├── pre-commit.sample
+│   ├── prepare-commit-msg.sample
+│   ├── pre-push.sample
+│   ├── pre-rebase.sample
+│   └── update.sample
+├── index
+├── info
+│   └── exclude
+├── logs
+│   ├── HEAD
+│   └── refs
+│       └── heads
+│           ├── master
+│           └── my_feature_branch
+├── objects
+│   ├── 1b
+│   │   └── f567a9cee63cd3036628c1519b818461905b27
+│   ├── 2b
+│   │   └── 297e643c551e76cfa1f93810c50811382f9117
+│   ├── 5e
+│   │   └── c1f4ac6015a50b5d8462582d7ae50d7029d012
+│   ├── 70
+│   │   └── cc10cfcc770f6b0ea11cdd9a876ee1a3184d77
+│   ├── 9d
+│   │   └── aeafb9864cf43055ae93beb0afd6c7d144bfa4
+│   ├── c1
+│   │   └── 2d7c0ed49ad9c7aa938743ba6fdee54b6b7fe1
+│   ├── info
+│   └── pack
+└── refs
+    ├── heads
+        │   ├── master
+            │   └── my_feature_branch
+                └── tags
+
+18 directories, 26 files</code></pre>
+<p>Now, if we look at <code class="inline">COMMIT_EDITMSG</code></p>
+<pre><code class="">add file + dir</code></pre>
+<p>And again it is our latest message. The other major change is we have a ton of new objects.
+Just to see what happens, let’s checkout master and see if anything changes:</p>
+<pre><code class="bash">git checkout master</code></pre>
+<p>and we get the same tree, but we can check out our HEAD item in the <code class="inline">.git</code> directory.</p>
+<p>So we have the same thing, but our <code class="inline">HEAD</code> file reads:</p>
+<pre><code class="">ref: refs/heads/master</code></pre>
+<p>So we can now see this is our constant anchor as we navigate changes.</p>
+<h2>Objects</h2>
+<pre><code class="bash">$ find .git/objects
+.git/objects/pack
+.git/objects/info
+.git/objects/b7
+.git/objects/b7/37ff03e6f22c28bc4786f4b11925f2d864e00
+...
+.git/objects/4c
+.git/objects/4c/2be36223ca4d07cbd7ce8c28419ba1c4144334</code></pre>
+<p>Here we see a list of a butt ton of what looks like SHA-1 hashes. So what is git doing with all of
+these?</p>
+<p>Let’s create a clean repository and proceed to start an empty git repo in it.</p>
+<p><code class="inline">cd .. &amp;&amp; mkdir git_testing</code></p>
+<p>Initialize a repository</p>
+<p><code class="inline">git init</code></p>
+<p>And now, let’s try creating one of these hash objects. We do this with the git command <code class="inline">hash-object</code>.
+If we simply use some bash, we can do this without even needing a file. By doing this we will pipe
+an echoed statement into the hash-object command through stdin and receive our hash in stdout.</p>
+<p><code class="inline">echo &#39;test content&#39; | git hash-object -w --stdin</code></p>
+<pre><code class="bash">d670460b4b4aece5915caf5c68d12f560a9fe3e4</code></pre>
+<p>So, it took the string ‘test content’ and hashed it then spat it back out in SHA-1 form. Cool.</p>
+<p>We should examine this further.</p>
+<p><code class="inline">echo &quot;test&quot; &gt; test.txt</code></p>
+<p><code class="inline">git hash-object -w test.txt</code></p>
+<p><code class="inline">vim test.txt</code></p>
+<pre><code class="txt">test
+test 2</code></pre>
+<p>If we save this change and run the command again:</p>
+<p><code class="inline">git hash-object -w test.txt</code></p>
+<p><code class="inline">6375a2690c50e28c8c351fc552e2fd8a24b01031</code></p>
+<p>And if we check out our objects directory we can now see what git has done:</p>
+<pre><code class="bash">bobby@bobdawg-devbox:~/code/git_test/test$ find .git/objects/ -type f
+.git/objects/9d/aeafb9864cf43055ae93beb0afd6c7d144bfa4
+.git/objects/63/75a2690c50e28c8c351fc552e2fd8a24b01031</code></pre>
+<p>It has a hash for each of our objects saved. Woo! But wait. We haven’t committed anything. How is git
+tracking all this?</p>
+<p>Well it turns out git just keeps some headers with these SHA-1’s, and does a bunch of cool stuff so it
+only has to track changes. Not entire new versions of each document. So each of these objects simply
+represents a given state of some blob of our data.’</p>
+<p>If we dive in to do the reverse of this, we can look up our input using git’s <code class="inline">cat-file</code> command, which
+intakes a hash.</p>
+<p><code class="inline">git cat-file 6375a2690c50e28c8c351fc552e2fd8a24b01031</code></p>
+<pre><code class="">test
+test 2</code></pre>
+<p>Now, if we make another change on this, we will be able to see the new version.</p>
+<p><code class="inline">vim test.txt</code></p>
+<pre><code class="">test &quot;one&quot;</code></pre>
+<p>If we delete everything and replace it with this line, the do our typical:</p>
+<p><code class="inline">git hash-object -w test.txt</code></p>
+<p>We get a new hash, which when called with <code class="inline">cat-file</code> will output a the new value,
+while still keeping our old object in history.</p>
+<p>What this really is at it’s core is a key:value store. Using this, we can leverage
+a very simple database that only relies on single key/value types (symbol, string)
+to store any data we need to and look it up. So, let’s move on.</p>
+<h2>Aside - Git: A Directed Acyclic Graph</h2>
+<p>In the broadest of terms, git is a <a href="https://en.wikipedia.org/wiki/Directed_acyclic_graph">directed acyclic graph</a>. This sounds quite fancy and/or
+scary depending on how hard in the paint you go with mathematica, but it truly isn’t that crazy.
+Let’s ignore Wikipedia’s terse entry, and instead break it down on our own.</p>
+<h2>Storage</h2>
+<p>In its most basic state, git functions to make one of these graphs connecting a series of objects. These
+objects also have a handful of types.</p>
+<h3>Types</h3>
+<h4>Blob</h4>
+<p>A <code class="inline">blob</code> is a blob of bytes. It usually is a file, but can also be a symlink or a myriad of other things.
+It is all simply semantics as long as there is a pointer to the <code class="inline">blob</code>.</p>
+<h4>Tree</h4>
+<p>Directories are represented by a <code class="inline">tree</code> object. They refer to <code class="inline">blobs</code> and other <code class="inline">trees</code>. When one of these nodes
+(a <code class="inline">tree</code> or a <code class="inline">blob</code>, in this case) points to another in the graph, it <em>depends</em> on that node. It is a connection
+that cannot be broken. You can garbage collect, filesystem check, and a myriad of other functions
+but we do not need to truly know more other than that without a referent of dependence, a node
+is essentially useless, as it is disconnected.</p>
+<h4>Commit</h4>
+<p>A <code class="inline">commit</code> refers to a tree that represents the state of a group of <code class="inline">blobs</code>’ state at the time of that given
+commit. It refers to a range <code class="inline">X</code> of other commits that are its parents. More than one parent means a merge,
+no parent means an initial commit, and a single just means its a regular old commit. As we saw earlier,
+the body of a commit is its message.</p>
+<h4>Refs</h4>
+<p>Refs have two functions: storing <code class="inline">HEAD</code>s, and <code class="inline">branches</code>. They are essentially notes left on a given
+node. These notes can be moved around freely and arent stored in history, and arent transferred
+between repositories. They are simply a means to namespace ‘I am working here’.</p>
+<h4>Visualizing It</h4>
+<p><img src="http://eagain.net/articles/git-for-computer-scientists/git-history.6.dot.svg" alt="A Typical remote/local DAG"/></p>
+<p>As you can see, these nodes form a <code class="inline">tree</code> of functioning between master and a remote with a few merges
+thrown in (any of the nodes with 2 parents).</p>
+<h2>Git as a Key:Value Store</h2>
+<h3>Note: Do not use this for real software</h3>
+<h3>Addendum: Apparently <a href="http://crates.io">crates.io</a> does this, and those guys are wicked smart, so maybe its a good idea but definitely not at this capacity we are building</h3>
+<p>Since the <code class="inline">cat-file</code> and <code class="inline">hash_object</code> pattern functions simply as a key:value store for git, we
+can utilize this to our advantage. Normal storing large strings in-memory in Ruby can get quite
+taxing, but if we simply store the string of the SHA-1 hash to a given key, we can greatly reduce
+the memory footprint of our master dictionary and allow it to grow far larger in size (theoretically).
+So, let’s code up a pseudo-class for this and fill it in after we get that far.</p>
+<p><code class="inline">vim git_database.rb</code></p>
+<pre><code class="ruby">module GitDatabase
+class Database
+  def initialize
+    # set initliazers and master dictionary
+  end
+
+  def set
+    # set a given key to a value
+  end
+
+  def get
+    # get a given key&#39;s value
+  end
+
+  def hash_object
+    # hash a given input that is coerced to a string
+  end
+
+  def cat_file
+    # cat out a given file based on SHA-1 hash
+  end
+end
+end</code></pre>
+<p>We can now tackle this piece by piece.</p>
+<h4>Initializers</h4>
+<p><code class="inline">vim git_database.rb</code></p>
+<pre><code class="ruby">...
+class Database
+  attr_accessor :items
+
+  def initialize
+    @items = {}
+    `git init`
+  end
+...
+</code></pre>
+<p>Simple enough. We ensure we have a git repository initialized, and we ensure that we setup our
+master dictionary.</p>
+<h4>Hashing</h4>
+<p><code class="inline">vim git_database.rb</code></p>
+<pre><code class="ruby">...
+  def hash_object(string)
+    # What do we do?
+  end
+...</code></pre>
+<p>Well, to start, lets fire up irb and see what we can do calling git from Ruby.</p>
+<pre><code class="">irb
+irb(main):001:0&gt; string = &quot;test&quot;
+=&gt; &quot;test&quot;
+irb(main):002:0&gt; `echo #{string}`
+=&gt; &quot;test\n&quot;
+irb(main):003:0&gt; `echo #{string} | git hash-object -w --stdin`
+=&gt; &quot;9daeafb9864cf43055ae93beb0afd6c7d144bfa4\n&quot;
+irb(main):004:0&gt; `echo #{string} | git hash-object -w --stdin`.strip!
+=&gt; &quot;9daeafb9864cf43055ae93beb0afd6c7d144bfa4&quot;</code></pre>
+<p>So, it appears we can essentially call exactly what we were prior. We can now reasonable change the
+function to be:</p>
+<pre><code class="ruby">...
+  def hash_object(data)
+    `echo #{data} | git hash-object -w --stdin`.strip!
+  end
+...</code></pre>
+<p>And this will get that blob hashed up and stored for us. Now, notice we get the exact hash here, but if
+we do a</p>
+<p><code class="inline">find .git/objects -type f</code></p>
+<p>and look at a sampling of what we get:</p>
+<pre><code class="">.git/objects/e4/ea753518a47496350473b8eb0972ad2985d964</code></pre>
+<p>You might notice that objects has subdirectories of seemingly random 2 letter combos. There are the first 2
+characters of the hash, but git does this to save on overhead. So, if looking in the git directory for hashes
+you must account for the parent directory of the longer string to get the entire SHA-1.</p>
+<h4>Cattin’</h4>
+<p>Since the prior method returns us a hash directly, we can use the same command as earlier and interpolate.</p>
+<pre><code class="ruby">...
+  def cat_file(hash)
+    `git cat-file -p #{hash}`
+  end
+...</code></pre>
+<p>And now we just need a way to map keys to the hashes we have saved.</p>
+<h4>Set</h4>
+<pre><code class="ruby">...
+  def set
+    # get key, data
+    # hash data
+    # save key to SHA-1 hash in @items
+  end
+...</code></pre>
+<p>This is a reasonable fleshed out idea of a simple set implementation. So, first we need to take in a key:</p>
+<pre><code class="ruby">...
+  def set(key, value)
+    hash = hash_object(value.to_s)
+    @items[key] = value
+  end
+...</code></pre>
+<p>And now, we can move onto a get implementation</p>
+<h4>Get</h4>
+<p>To get, we have a little more to do. We will have a key, and that gets us an SHA-1 hash. However,
+we still need to decrypt it using our <code class="inline">cat_file</code> function. So, if we pseudocode this out:</p>
+<pre><code class="ruby">...
+  def get
+    # find hash by key
+    # cat-file hash
+  end
+...</code></pre>
+<p>So, with our functions already set up we can simply go in and do this:</p>
+<pre><code class="ruby">...
+  def get(key)
+    cat_file(@items[key.to_s])
+  end
+...
+</code></pre>
+<p>And now, we have a finished class that can function as a reasonable minimal database. Consider
+it an equally ghetto but more interesting version of the good ‘ole CSV store.</p>
+<h3>Accessing Object History</h3>
+<p>Currently we are only returning the latest version of a given item. However, we have already stored it at every
+state it hash ever been hashed. So, if we were to add in some functionality for grabbing versions, it would be
+quite simple.</p>
+<pre><code class="ruby">module GitDatabase
+  class Database
+    attr_accessor :items
+    def initialize
+      `git init`
+      @items = {}
+    end
+
+    def set(key, value)
+      unless key in @items.keys
+        @items[key] = [hash_object(value)]
+      else
+        @items[key] &lt;&lt; value
+      end
+    end
+
+    def get(key)
+      cat_file(@items[key.to_s].first)
+    end
+
+    def get_version(key, version)
+      # 0 = latest, numbers = older
+      @items[key][version]
+    end
+
+    def versions(key)
+      @items[key].count
+    end
+
+    private
+
+    def hash_object(data)
+      `echo #{data.to_s} | git hash-object -w --stdin`.strip!
+    end
+
+    def cat_file(hash)
+      `git cat-file -p #{hash}`
+    end
+  end
+end</code></pre>
+<p>Now, we can do something like:</p>
+<pre><code class="ruby">db = GitDatabase::Database.new
+db.set(&quot;Apples&quot;, &quot;12&quot;)
+db.get(&quot;Apples&quot;)
+# =&gt; &quot;12&quot;
+db.set(&quot;Apples&quot;, &quot;10&quot;)
+db.get_version(&quot;Apples&quot;, 0)
+# =&gt; &quot;12&quot;
+db.get(&quot;Apples&quot;)
+# =&gt; &quot;10&quot;</code></pre>
+<p>Abd to use this. We can make a very simple sinatra API to take input remotely:</p>
+<pre><code class="ruby">... # below the class
+require &#39;sinatra&#39;
+require &#39;json&#39;
+DB = GitDatabase::Database.new
+post &#39;/set&#39; do
+DB.set(params[&#39;key&#39;], params[&#39;value&#39;]
+rescue
+  { error: &#39;please send key and value parameters&#39; }.to_json
+end
+end
+
+get &#39;/get/:key&#39; do
+{ result: DB.get(params[&#39;key&#39;] }.to_json
+end</code></pre>
+<p>This is a very simple wrapper, but if gives the general idea of where you could take this with a toy application.</p>
+<h2>Happy Hacking, and check out <a href="http://github.com/ybur-yug/gkv">Gkv</a> to actually use this in a small app</h2>
+</br></br></br></br></br></br></br></br></br></br></br></br>
+</html>
