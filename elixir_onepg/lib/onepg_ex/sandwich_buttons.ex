@@ -1,4 +1,7 @@
 defmodule OnepgEx.SandwichButtons do
+  @moduledoc """
+  Buttons for turning the sandwich background on and off. Essential.
+  """
   @button_nodes [
     "<button onclick=\"document.body.background = ''\">Sandwich Off</button>",
     "<button onclick=\"document.body.background = 'sandwich.jpg'\">Sandwich On</button>\n"

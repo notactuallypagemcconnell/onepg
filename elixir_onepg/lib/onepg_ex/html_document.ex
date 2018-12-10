@@ -1,4 +1,8 @@
 defmodule Onepg.HtmlDocument do
+  @moduledoc """
+  Our generic representation of an HTML document using a linked list
+  """
+
   @base_document [
     "<!DOCTYPE html>",
     "<html>",

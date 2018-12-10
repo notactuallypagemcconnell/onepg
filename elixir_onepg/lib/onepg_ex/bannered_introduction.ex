@@ -4,7 +4,7 @@ defmodule OnepgEx.BanneredIntroduction do
   @colors ["red", "light blue", "orange"]
 
   def create_headered_span_words(words, header_size) do
-    nodes = 
+    nodes =
       words
       |> String.split(" ")
       |> Enum.map(fn word ->
@@ -13,6 +13,7 @@ defmodule OnepgEx.BanneredIntroduction do
 
         "<h#{header_size}>#{spans}</h#{Integer.to_string(header_size)}>"
       end)
+
     html = Enum.join(nodes, "\n")
     %Onepg.HtmlDocument{body: html, nodes: nodes}
   end
