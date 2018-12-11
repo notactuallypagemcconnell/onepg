@@ -15,9 +15,9 @@ defmodule OnepgEx.OnePageSite do
   # get the html
   IO.puts site.body
   """
-  def create(phrase, header_size \\ 2) do
+  def create(about_me, twitter_handle, header_size \\ 2) do
     base = %Onepg.HtmlDocument{}
-    nodes = OnepgEx.HtmlNodes.all(phrase, header_size)
+    nodes = OnepgEx.HtmlNodes.all(about_me, header_size)
     {:ok, page} = Onepg.HtmlDocument.add_nodes(base, nodes)
     page
   end

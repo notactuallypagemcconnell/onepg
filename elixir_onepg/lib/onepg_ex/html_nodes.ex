@@ -1,8 +1,9 @@
 defmodule OnepgEx.HtmlNodes do
   @colors ["red", "light blue", "orange"]
 
-  def all(greeting, header_size \\ 2) do
-    sandwich_buttons ++ create_banner(greeting, header_size) ++ blog
+  def all(greeting, twitter_handle, header_size \\ 2) do
+    sandwich_buttons ++ create_banner(greeting, header_size) ++ twitter_handle(twitter_handle) ++ blog
+    require IEx; IEx.pry
   end
 
   def sandwich_buttons do
@@ -10,6 +11,10 @@ defmodule OnepgEx.HtmlNodes do
       "<button onclick=\"document.body.background = ''\">Sandwich Off</button>",
       "<button onclick=\"document.body.background = 'sandwich.jpg'\">Sandwich On</button>\n"
     ]
+  end
+
+  def twitter_handle(handle) do
+    ["<h3><a href='https://twitter.com/#{handle}</h3>"]
   end
 
   def about(words, header_size \\ 2) do
@@ -57,7 +62,7 @@ defmodule OnepgEx.HtmlNodes do
     "<span style='color: #{color}'>#{char}</br></span>\n"
 
   defp char_is_last(false, char, color), do:
-  "<span style='color: #{color}'>#{char}</span>\n"
+    "<span style='color: #{color}'>#{char}</span>\n"
 
   defp filter_swapfiles(file), do:
     should_filter_swapfile(file)
@@ -65,7 +70,7 @@ defmodule OnepgEx.HtmlNodes do
   def should_filter_swapfile("." <> rest), do:
     true
 
-  def should_filter_swapfile("." <> rest), do:
+  def should_filter_swapfile(_), do:
     false
 
   defp create_blog_post(file) do
