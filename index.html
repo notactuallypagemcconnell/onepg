@@ -38,13 +38,15 @@
 
 			ctx.stroke();
 
-			window.requestAnimationFrame(clock);
+      setTimeout(() => {
+        window.requestAnimationFrame(clock);
+      }, 150)
 		}
-		window.requestAnimationFrame(clock);
+    window.requestAnimationFrame(clock);
   });
 </script>
 <div style='display: flex' >
-<span style='min-width: 35vw' id="farts">
+<span id="farts">
   <h2><span style='color: light blue'>I</span>
   <span style='color: orange'>'</span>
   <span style='color: red'>m</br></span>
