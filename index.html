@@ -12,9 +12,11 @@
 				}
 				return a;
 			}
+
 	    var cvs = document.getElementById('myCanvas')
+      var farts = document.getElementById("farts")
       cvs.height = window.innerHeight
-      cvs.width = window.innerWidth * 0.5
+      cvs.width = window.innerWidth - farts.offsetWidth
       var ctx = cvs.getContext('2d');
 			ctx.scale(0.3, 0.3);
 
@@ -41,8 +43,8 @@
 		window.requestAnimationFrame(clock);
   });
 </script>
-<div style='display: flex'>
-<span style='width: 30vw'>
+<div style='display: flex' >
+<span style='min-width: 35vw' id="farts">
   <h2><span style='color: light blue'>I</span>
   <span style='color: orange'>'</span>
   <span style='color: red'>m</br></span>
