@@ -4,6 +4,10 @@ class Bezier
     @bezier_node = bezier_node
   end
 
+  def off_button
+    "<button onclick='var elem = document.getElementById(\"myCanvas\");elem.parentElement.removeChild(elem)'>No Mas Bezier</button>\n"
+  end
+
   def bezier_node
       <<-CODE
       <script>

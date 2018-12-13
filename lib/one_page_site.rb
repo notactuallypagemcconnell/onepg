@@ -15,7 +15,9 @@ class OnePageSite
 
   def generate
     document = HtmlDocument.new
-    document.add_node(Bezier.new.bezier_node)
+    bezier = Bezier.new
+    document.add_node(bezier.bezier_node)
+    document.add_node(bezier.off_button)
     document.add_node("<div style='display: flex'>")
     document.add_node("<span id='farts'>")
     document.add_nodes(about_me.about_me_nodes)
