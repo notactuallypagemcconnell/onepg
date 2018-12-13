@@ -2,6 +2,7 @@ require 'rdiscount'
 
 require_relative 'blog_post'
 require_relative 'about_me_page'
+require_relative 'bezier'
 
 class OnePageSite
   attr_reader :intro
@@ -14,7 +15,13 @@ class OnePageSite
 
   def generate
     document = HtmlDocument.new
+    document.add_node(Bezier.new.bezier_node)
+    document.add_node("<div style='display: flex'>")
+    document.add_node("<span id='farts'>")
     document.add_nodes(about_me.about_me_nodes)
+    document.add_node("</span>")
+    document.add_node("<canvas id='myCanvas'></canvas>")
+    document.add_node("</div>")
     blog_posts = `ls posts`
                    .split("\n")
                    .map { |post| BlogPost.new(post) }
@@ -22,6 +29,7 @@ class OnePageSite
                      document.add_nodes(post.html_nodes)
                    end
     @html_document = document
+    File.write("index.html", document.body)
     copy_to_clipboard(document.body)
   end
 

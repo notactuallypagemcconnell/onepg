@@ -5,7 +5,7 @@ class SandwichButtons
 
   def initialize(document = HtmlDocument.new)
     @html_document = document
-    @button_nodes = ["<button onclick=\"document.body.background = ''\">Sandwich Off</button>", "<button onclick=\"document.body.background = 'sandwich.jpg'\">Sandwich On</button>\n"]
+    @button_nodes = ["<button onclick=\"document.body.background = ''\">Sandwich Off</button>", "<button onclick=\"document.body.background = 'sandwich.jpg'\">Sandwich On</button>\n", "<button onclick='var elem = document.getElementById(\"myCanvas\");elem.parentElement.removeChild(elem)'>No Mas Bezier</button>"]
     @html_document.add_nodes(button_nodes)
     @buttons_html = @button_nodes.join
   end
