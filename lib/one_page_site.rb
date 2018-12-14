@@ -53,5 +53,6 @@ class OnePageSite
 
   def pbcopy(text)
     IO.popen('pbcopy', 'w') { |f| f << text }
+    puts text
   end
 end

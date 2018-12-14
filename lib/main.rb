@@ -7,4 +7,4 @@ default = "I'm Bobby. I'm a programmer in New York. My github's @notactuallypage
 
 OnePageSite.new(default).generate
 
-puts "Site copied to clipboard, index.html written as well."
+# puts "Site copied to clipboard, index.html written as well."
