@@ -18,6 +18,7 @@ class OnePageSite
     bezier = Bezier.new
     document.add_node(bezier.bezier_node)
     document.add_node(bezier.off_button)
+    document.add_node("<a href='http://computering.info'>Learn to code</a>")
     document.add_node("<div style='display: flex'>")
     document.add_node("<span id='farts'>")
     document.add_nodes(about_me.about_me_nodes)
