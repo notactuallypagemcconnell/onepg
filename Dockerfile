@@ -61,6 +61,7 @@ RUN set -xe; \
         python3 \
         tar \
         tzdata \
+        yaml \
         xz \
         zlib; \
     pip3 install --upgrade pip;
@@ -173,12 +174,19 @@ RUN set -xe; \
 
 # Put on a show.
 RUN set -xe; \
-    gif-for-cli --display-mode truecolor -l 25 /onepg/keyboard.gif & \
+    gif-for-cli --display-mode truecolor -l 30 /onepg/keyboard.gif & \
     reset; \
     wait;
 
 # Drop down to our unprivileged user.
 USER onepg
+
+RUN set -xe; \
+    gem install bundler --user-install; \
+    mix local.hex; \
+    mix local.rebar; \
+    cd make_the_page; \
+    bundle install;
 
 # Set our working directory.
 WORKDIR /onepg
