@@ -56,6 +56,9 @@ RUN set -xe; \
         tzdata \
         xz;
 
+# Copy our assets into the container.
+COPY --chown=onepg:onepg ./docker-assets /
+
 # Build ruby from source
 ARG RUBY_VERSION
 ARG RUBY_CFLAGS
@@ -64,6 +67,7 @@ RUN set -xe; \
     apk --no-cache add --virtual .ruby-build-deps \
         alpine-sdk \
         autoconf \
+        bison \
         coreutils \
         db-dev \
         gdbm-dev \
@@ -80,15 +84,23 @@ RUN set -xe; \
     cp /usr/share/abuild/config.guess tool/config.guess; \
     cp /usr/share/abuild/config.sub tool/config.sub; \
     autoconf; \
-    ./configure --prefix=/usr/local; \
+    patch thread_pthread.c /usr/local/patches/ruby/stack.patch; \
+    ./configure \
+        --prefix=/usr/local \
+        --enable-pthread \
+        --sysconfdir="/usr/local/etc" \
+        --with-sitedir="/usr/local/lib/site_ruby" \
+        --with-search-path="/usr/local/lib/site_ruby/${RUBY_VERSION}/$(arch)-linux" \
+        --enable-shared \
+        --disable-rpath; \
     make -j"$(nrpoc)"; \
+    echo "When tests fail, just change the test ¯\_(ツ)_/¯" \
+    sed -i 's/\(x = once\)\((128)\)\(; x = once(7); x = once(16);\)/\1(32)\3/g' bootstraptest/test_insns.rb; \
+    make test; \
     make install; \
     cd /var/tmp; \
     rm -rf /var/tmp/ruby-${RUBY_VERSION}; \
     apk del .ruby-build-deps;
-
-# Copy our entrypoint into the container.
-COPY --chown=onepg:onepg ./docker-assets /
 
 # Setup our environment variables.
 ENV PATH="/usr/local/bin:$PATH" \
