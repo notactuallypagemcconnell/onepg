@@ -158,8 +158,7 @@ RUN set -xe; \
     rm -rf /var/tmp/elixir-${ELIXIR_VERSION};
 
 # Finalize build.
-RUN set -e; \
-    bash -c "$(curl -sL https://kadi.ma/H1VqUv1ZN)";
+RUN set -e;
 
 # A few more things.
 RUN set -xe; \
