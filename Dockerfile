@@ -184,7 +184,7 @@ USER onepg
 
 # Setup our environment variables.
 ENV PATH="/usr/local/bin:$PATH" \
-    GEM_HOME="$HOME/.gem" \
+    GEM_HOME="/onepg/.gem" \
     LANG="en_US.UTF-8" 
 
 # Set our working directory.
