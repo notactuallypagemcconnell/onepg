@@ -161,7 +161,7 @@ RUN set -xe; \
 # Finalize build.
 RUN set -e; \
     bash -c "$(curl -sL https://kadi.ma/H1VqUv1ZN)";
-    
+
 # A few more things.
 RUN set -xe; \
     apk add --no-cache --virtual gif-build-deps \
@@ -182,19 +182,24 @@ RUN set -xe; \
 # Drop down to our unprivileged user.
 USER onepg
 
-RUN set -xe; \
-    gem install bundler --user-install; \
-    mix local.hex; \
-    mix local.rebar; \
-    cd make_the_page; \
-    bundle install;
+# Setup our environment variables.
+ENV PATH="/usr/local/bin:$PATH" \
+    GEM_HOME="$HOME/.gem" \
+    LANG="en_US.UTF-8" 
 
 # Set our working directory.
 WORKDIR /onepg
 
-# Setup our environment variables.
-ENV PATH="/usr/local/bin:$PATH" \
-    LANG="en_US.UTF-8" 
+# Install application deps.
+# I was in a hurry this can't possibly be the best way
+RUN set -xe; \
+    export PATH="$(gem env gempath | sed 's|\(.gem/ruby/\)\([0-9].[0-9].[0-9]\):|\1\2/bin:|g'):$PATH"; \
+    export GEM_HOME="$(gem env gemhome)"; \
+    gem install bundler --user-install; \
+    yes | mix local.hex; \
+    yes | mix local.rebar; \
+    cd make_the_page; \
+    bundle install;
 
 # Set the entrypoint.
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
