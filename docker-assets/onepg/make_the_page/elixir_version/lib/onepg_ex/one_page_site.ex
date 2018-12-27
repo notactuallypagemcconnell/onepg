@@ -23,7 +23,7 @@ defmodule OnepgEx.OnePageSite do
   end
 
   def meta_create(about_me, twitter_handle \\ "@notactuallypagemcconnell", header_size \\ 2) do
-    %{out: result} = Porcelain.shell("ruby ../lib/main.rb")
+    %{out: result} = Porcelain.shell("cd ../ && bundle exec ruby lib/main.rb")
     IO.puts("File written by calling ruby from a Port in Elixir")
   end
 end

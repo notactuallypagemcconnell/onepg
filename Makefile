@@ -31,9 +31,7 @@ test:
 
 # Our primary build artifact.
 index.html: build_image_dev 
-	docker run -i -t --name=onepg --privileged notactuallypagemcconnell/onepg echo "Lawls"
-	docker export onepg | gtar -x onepg/make_the_page/index.html --strip-components=2 -C ./
-	docker rm onepg
+	docker run -i -t --rm notactuallypagemcconnell/onepg > index.html
 
 # Clean our build
 clean:

@@ -173,6 +173,10 @@ RUN set -xe; \
     curl -SL https://media.giphy.com/media/Fyubg2TieQ1C8/giphy.gif > /onepg/keyboard.gif; \
     chown -R onepg:onepg /onepg;
 
+# Add vim for debugging
+RUN set -xe; \
+    apk --no-cache add vim;
+
 # Drop down to our unprivileged user.
 USER onepg
 
@@ -187,27 +191,25 @@ WORKDIR /onepg
 # Install application deps.
 # I was in a hurry this can't possibly be the best way
 RUN set -xe; \
-    for path in $(gem env gempath | sed 's|:| |g'); do export PATH="$path/bin:$PATH";done; \
+    export GEM_PATH="$(gem env gempath):$GEM_PATH"; \
+    for path in $(echo "$GEM_PATH" | sed 's|:| |g'); do export PATH="$path/bin:$PATH";done; \
     gem install bundler --user-install; \
-    yes | mix local.hex; \
-    yes | mix local.rebar; \
     cd make_the_page; \
     bundle install; \
+    bundle add pry; \
+    bundle add kramdown; \
     cd elixir_version; \
+    yes | mix local.hex; \
+    yes | mix local.rebar; \
     mix deps.get; \
     mix deps.compile; \
-    mix escript.build; \
-    cp onepg_ex ../../; \
-    cd ../../; \
-    ./onepg_ex; \
-    ls -a;
+    mix escript.build;
 
 # Put on a show.
 RUN set -xe; \
     gif-for-cli --display-mode truecolor -l 30 /onepg/keyboard.gif & \
     reset; \
     wait;
-
 
 # Set the entrypoint.
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
