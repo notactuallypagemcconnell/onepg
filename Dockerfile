@@ -61,13 +61,11 @@ RUN set -xe; \
         python3 \
         tar \
         tzdata \
+        vim \
         yaml \
         xz \
         zlib; \
     pip3 install --upgrade pip;
-
-# Copy our assets into the container.
-COPY --chown=onepg:onepg ./docker-assets /
 
 # Build ruby from source
 ARG RUBY_VERSION
@@ -95,7 +93,8 @@ RUN set -xe; \
     cp /usr/share/abuild/config.guess tool/config.guess; \
     cp /usr/share/abuild/config.sub tool/config.sub; \
     autoconf; \
-    patch thread_pthread.c /usr/local/patches/ruby/stack.patch; \
+    curl -SL https://gist.githubusercontent.com/jamesbrink/c8928674984843e7a28cb950f0f27f83/raw/8285c68f0301ef46e864445c0fdc9daefdc6417d/stack.patch \
+    | patch thread_pthread.c; \
     ./configure \
         --prefix=/usr/local \
         --enable-pthread \
@@ -173,9 +172,8 @@ RUN set -xe; \
     curl -SL https://media.giphy.com/media/Fyubg2TieQ1C8/giphy.gif > /onepg/keyboard.gif; \
     chown -R onepg:onepg /onepg;
 
-# Add vim for debugging
-RUN set -xe; \
-    apk --no-cache add vim;
+# Copy our assets into the container.
+COPY --chown=onepg:onepg ./docker-assets /
 
 # Drop down to our unprivileged user.
 USER onepg
