@@ -1,0 +1,158 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"></head><script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script><script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script><!-- Load our React component. --><script src="like_button.js"></script>      <script>
+        document.addEventListener('DOMContentLoaded', function(){
+          function clock() {
+            function shuffle(a) {
+              for (let i = a.length - 1; i > 0; i--) {
+                  const j = Math.floor(Math.random() * (i + 1));
+                  [a[i], a[j]] = [a[j], a[i]];
+              }
+              return a;
+            }
+
+            var cvs = document.getElementById('myCanvas')
+            var farts = document.getElementById('farts')
+            cvs.height = window.innerHeight
+            cvs.width = window.innerWidth - farts.offsetWidth
+            var ctx = cvs.getContext('2d');
+            ctx.scale(0.3, 0.3);
+
+            // if you remove this it makes the lines get all pixelated lol wonder why
+            ctx.beginPath();
+
+            var move1 = shuffle([10, 50, 100, 250])
+            ctx.moveTo(move1,50);
+
+            var curve_values = [10, 100, 1000, 20, 200, 2000, 30, 300, 3000, 40, 400, 4000, 50, 500, 5000, 60, 600, 6000, 70, 700, 7000, 80, 800, 8000, 90, 900, 9000]
+            var to_sample = shuffle(curve_values)
+            var a = to_sample[0]
+            var b = to_sample[1]
+            var c = to_sample[2]
+            var d = to_sample[3]
+            var e = to_sample[4]
+            var f = to_sample[5]
+            ctx.bezierCurveTo(a,b,c,d,e,f);
+
+            ctx.stroke();
+
+            setTimeout(() => {
+              window.requestAnimationFrame(clock);
+            }, 150)
+          }
+          window.requestAnimationFrame(clock);
+        });
+      </script>
+<button onclick='var elem = document.getElementById("myCanvas");elem.parentElement.removeChild(elem)'>No Mas Bezier</button>
+<div style='display: flex'><span id='farts'><button onclick="document.body.background = ''">Sandwich Off</button>
+<button onclick="document.body.background = 'sandwich.jpg'">Sandwich On</button>
+<h2><span style='color: orange'>I</span>
+<span style='color: orange'>'</span>
+<span style='color: red'>m</br></span>
+</h2><h2><span style='color: light blue'>B</span>
+<span style='color: red'>o</span>
+<span style='color: light blue'>b</span>
+<span style='color: light blue'>b</span>
+<span style='color: light blue'>y</span>
+<span style='color: light blue'>.</br></span>
+</h2><h2><span style='color: orange'>I</span>
+<span style='color: orange'>'</span>
+<span style='color: light blue'>m</br></span>
+</h2><h2><span style='color: light blue'>a</br></span>
+</h2><h2><span style='color: light blue'>p</span>
+<span style='color: red'>r</span>
+<span style='color: light blue'>o</span>
+<span style='color: light blue'>g</span>
+<span style='color: light blue'>r</span>
+<span style='color: red'>a</span>
+<span style='color: light blue'>m</span>
+<span style='color: orange'>m</span>
+<span style='color: red'>e</span>
+<span style='color: orange'>r</br></span>
+</h2><h2><span style='color: orange'>i</span>
+<span style='color: red'>n</br></span>
+</h2><h2><span style='color: orange'>N</span>
+<span style='color: red'>e</span>
+<span style='color: red'>w</br></span>
+</h2><h2><span style='color: light blue'>Y</span>
+<span style='color: red'>o</span>
+<span style='color: orange'>r</span>
+<span style='color: red'>k</span>
+<span style='color: red'>.</br></span>
+</h2><h2><span style='color: light blue'>M</span>
+<span style='color: red'>y</br></span>
+</h2><h2><span style='color: red'>g</span>
+<span style='color: light blue'>i</span>
+<span style='color: light blue'>t</span>
+<span style='color: orange'>h</span>
+<span style='color: light blue'>u</span>
+<span style='color: red'>b</span>
+<span style='color: red'>'</span>
+<span style='color: red'>s</br></span>
+</h2><h2><span style='color: red'>@</span>
+<span style='color: red'>n</span>
+<span style='color: light blue'>o</span>
+<span style='color: red'>t</span>
+<span style='color: orange'>a</span>
+<span style='color: light blue'>c</span>
+<span style='color: light blue'>t</span>
+<span style='color: light blue'>u</span>
+<span style='color: red'>a</span>
+<span style='color: light blue'>l</span>
+<span style='color: light blue'>l</span>
+<span style='color: light blue'>y</span>
+<span style='color: red'>p</span>
+<span style='color: red'>a</span>
+<span style='color: light blue'>g</span>
+<span style='color: light blue'>e</span>
+<span style='color: orange'>m</span>
+<span style='color: light blue'>c</span>
+<span style='color: orange'>c</span>
+<span style='color: light blue'>o</span>
+<span style='color: light blue'>n</span>
+<span style='color: light blue'>n</span>
+<span style='color: light blue'>e</span>
+<span style='color: light blue'>l</span>
+<span style='color: orange'>l</span>
+<span style='color: orange'>.</br></span>
+</h2><h2><span style='color: red'>I</br></span>
+</h2><h2><span style='color: red'>l</span>
+<span style='color: red'>i</span>
+<span style='color: orange'>k</span>
+<span style='color: orange'>e</br></span>
+</h2><h2><span style='color: orange'>i</span>
+<span style='color: orange'>m</span>
+<span style='color: light blue'>p</span>
+<span style='color: red'>r</span>
+<span style='color: red'>o</span>
+<span style='color: red'>v</span>
+<span style='color: orange'>i</span>
+<span style='color: orange'>z</span>
+<span style='color: orange'>a</span>
+<span style='color: red'>t</span>
+<span style='color: red'>i</span>
+<span style='color: red'>o</span>
+<span style='color: orange'>n</span>
+<span style='color: orange'>a</span>
+<span style='color: red'>l</br></span>
+</h2><h2><span style='color: red'>m</span>
+<span style='color: light blue'>u</span>
+<span style='color: light blue'>s</span>
+<span style='color: red'>i</span>
+<span style='color: orange'>c</span>
+<span style='color: red'>,</br></span>
+</h2><h2><span style='color: red'>e</span>
+<span style='color: light blue'>s</span>
+<span style='color: orange'>p</span>
+<span style='color: red'>e</span>
+<span style='color: red'>c</span>
+<span style='color: light blue'>i</span>
+<span style='color: red'>a</span>
+<span style='color: light blue'>l</span>
+<span style='color: light blue'>l</span>
+<span style='color: light blue'>y</br></span>
+</h2><h2><span style='color: red'>P</span>
+<span style='color: orange'>h</span>
+<span style='color: red'>i</span>
+<span style='color: light blue'>s</span>
+<span style='color: light blue'>h</span>
+<span style='color: red'>.</br></span>
+</h2></html>

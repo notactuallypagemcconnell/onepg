@@ -1,7 +1,15 @@
 class HtmlDocument
   attr_reader :body, :nodes
   def initialize
-    start_nodes = ["<!DOCTYPE html>", "<html>", "<head>", "<meta charset=\"UTF-8\">", "</head>"]
+    start_nodes = ["<!DOCTYPE html>",
+                   "<html>",
+                   "<head>",
+                   "<meta charset=\"UTF-8\">",
+                   "</head>",
+                   '<script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>',
+                   '<script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>',
+                   '<!-- Load our React component. -->',
+                   '<script src="like_button.js"></script>']
     start_nodes << html_close
     @nodes = start_nodes
     @body = @nodes.join("\n")

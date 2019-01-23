@@ -199,7 +199,10 @@ RUN set -xe; \
     yes | mix local.hex; \
     yes | mix local.rebar; \
     cd make_the_page; \
-    bundle install;
+    bundle install; \
+    elixir_version && mix escript.build; \
+    ./onepg_ex; \
+    cat index.html:
 
 # Set the entrypoint.
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
